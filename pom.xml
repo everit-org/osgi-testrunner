@@ -52,7 +52,7 @@
         <url>https://ci.everit.biz/jenkins/job/osgi-testrunner</url>
     </ciManagement>
     <issueManagement>
-            <system>GitHu<b/system>
+            <system>GitHub</system>
             <url>https://github.com/everit-org/osgi-testrunner/issues</url>
     </issueManagement>
     <build>
