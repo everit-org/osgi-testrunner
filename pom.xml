@@ -50,6 +50,10 @@
         <system>Jenkins</system>
         <url>https://ci.everit.biz/jenkins/job/osgi-testrunner</url>
     </ciManagement>
+    <issueManagement>
+            <system>GitHub</system>
+            <url>https://github.com/everit-org/osgi-testrunner/issues</url>
+    </issueManagement>
     <build>
         <plugins>
             <plugin>
