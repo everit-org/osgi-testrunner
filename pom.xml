@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.everit</groupId>
         <artifactId>oss</artifactId>
-        <version>3</version>
+        <version>4-SNAPSHOT</version>
     </parent>
     <groupId>org.everit.osgi.dev</groupId>
     <artifactId>org.everit.osgi.dev.testrunner</artifactId>
