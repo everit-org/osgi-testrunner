@@ -40,6 +40,7 @@ import java.util.Set;
 import org.everit.osgi.dev.testrunner.blocking.BlockingManager;
 import org.everit.osgi.dev.testrunner.blocking.BlockingManagerImpl;
 import org.everit.osgi.dev.testrunner.junit4.Junit4TestRunner;
+import org.everit.osgi.dev.testrunner.util.DependencyUtil;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -229,9 +230,11 @@ public class TestRunnerActivator implements BundleActivator {
         blockingManagerServiceRegistration = context.registerService(BlockingManager.class.getName(), blockingManager,
                 new Hashtable<String, String>());
 
+        if (DependencyUtil.isBlueprintAvailable()) {
         blueprintServiceRegistration = context.registerService(BlueprintListener.class.getName(),
                 blockingManager,
                 new Hashtable<String, Object>());
+        }
 
         Junit4TestRunner junit4TestRunner = new Junit4TestRunner(resultDumpFolder, resultDumpFolder, context);
         blockingManager.addTestRunner(junit4TestRunner);

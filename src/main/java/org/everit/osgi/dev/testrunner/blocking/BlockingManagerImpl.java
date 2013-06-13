@@ -22,6 +22,7 @@ package org.everit.osgi.dev.testrunner.blocking;
  */
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -30,6 +31,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.everit.osgi.dev.testrunner.util.BundleUtil;
+import org.everit.osgi.dev.testrunner.util.DependencyUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkEvent;
@@ -44,23 +46,26 @@ import org.slf4j.LoggerFactory;
  * probably not finished. As blueprint context is started asynchronously the test result checker thread has to wait
  * until all of the blueprint based bundles are set up correctly.
  */
-public final class BlockingManagerImpl implements BlueprintListener, FrameworkListener, BlockingManager {
-
-    /**
-     * Map for storing the blocker bundle ids with the Blueprint events that show what is blocking.
-     */
-    private final Map<Long, BlueprintEvent> blockerBlueprintBundles =
-            new ConcurrentHashMap<Long, BlueprintEvent>();
+public final class BlockingManagerImpl implements FrameworkListener, BlockingManager {
 
     /**
      * Logger of class.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockingManagerImpl.class);
 
+    private static final List<Blocker> BLOCKERS;
+
     /**
      * The period of time when the causes of the blocks are logged in millisecs.
      */
     public static final int BLOCKING_CAUSE_LOG_PERIOD = 30000;
+
+    static {
+        BLOCKERS = new ArrayList<Blocker>();
+        if (DependencyUtil.isBlueprintAvailable()) {
+            BLOCKERS.add(new BlueprintBlockerImpl());
+        }
+    }
 
     /**
      * Helper object for synchronization of the threads that are waiting for test results.
@@ -93,6 +98,11 @@ public final class BlockingManagerImpl implements BlueprintListener, FrameworkLi
     private Thread blockingManagerThread;
 
     /**
+     * The blockers that are currently blocking the test runners.
+     */
+    private Map<Blocker, Boolean> activeBlockers = new ConcurrentHashMap<Blocker, Boolean>();
+
+    /**
      * Constructor of blocking manager.
      * 
      * @param bundleContext
@@ -106,26 +116,6 @@ public final class BlockingManagerImpl implements BlueprintListener, FrameworkLi
     public void addTestRunner(final BlockedTestRunner testRunner) {
         LOGGER.info("Adding test runner to the queue: " + testRunner.toString());
         testRunnerQueue.add(testRunner);
-    }
-
-    @Override
-    public void blueprintEvent(final BlueprintEvent event) {
-        int eventType = event.getType();
-        if (eventType == BlueprintEvent.CREATED) {
-            removeBlockingBlueprintBundle(event);
-        } else if (eventType == BlueprintEvent.CREATING) {
-            blockerBlueprintBundles.put(event.getBundle().getBundleId(), event);
-        } else if (eventType == BlueprintEvent.DESTROYED) {
-            removeBlockingBlueprintBundle(event);
-        } else if (eventType == BlueprintEvent.DESTROYING) {
-            blockerBlueprintBundles.put(event.getBundle().getBundleId(), event);
-        } else if (eventType == BlueprintEvent.FAILURE) {
-            removeBlockingBlueprintBundle(event);
-        } else if (eventType == BlueprintEvent.GRACE_PERIOD) {
-            blockerBlueprintBundles.put(event.getBundle().getBundleId(), event);
-        } else if (eventType == BlueprintEvent.WAITING) {
-            blockerBlueprintBundles.put(event.getBundle().getBundleId(), event);
-        }
     }
 
     @Override
@@ -143,42 +133,33 @@ public final class BlockingManagerImpl implements BlueprintListener, FrameworkLi
 
     private void logBlockCauses() {
         StringBuilder sb = new StringBuilder("Test running is blocked due to the following reasons:\n");
-        for (BlueprintEvent blueprintEvent : blockerBlueprintBundles.values()) {
-            Bundle bundle = blueprintEvent.getBundle();
-            sb.append("  Bundle ").append(bundle.getSymbolicName());
-            sb.append("[").append(bundle.getBundleId()).append("]").append(":\n");
-            String[] dependencies = blueprintEvent.getDependencies();
-            if (dependencies != null) {
-                for (String dependency : dependencies) {
-                    sb.append("    ").append(dependency).append("\n");
-                }
-            }
+        for (Blocker blocker : activeBlockers.keySet()) {
+            sb.append("Blocker").append(blocker.toString()).append("\n");
+            blocker.logBlockCauses(sb);
         }
         LOGGER.info(sb.toString());
     }
 
-    /**
-     * Remove a bundle from the set of blocker bundles. This normally happens when a Blueprint state changes to CREATED
-     * or FAILED.
-     * 
-     * @param bundleId
-     *            The id of the bundle.
-     */
-    private void removeBlockingBlueprintBundle(final BlueprintEvent blueprintEvent) {
-        blockerBlueprintBundles.remove(blueprintEvent.getBundle().getBundleId());
-        if (blockerBlueprintBundles.size() == 0) {
-            synchronized (testRunningWaiter) {
-                testRunningWaiter.notify();
-            }
-            synchronized (testResultGettingWaiter) {
-                testResultGettingWaiter.notify();
-            }
-        }
-    }
-
     @Override
-    public void start() {
+    public void start(BundleContext context) {
         if (stopped.compareAndSet(true, false)) {
+            for (final Blocker blocker : BLOCKERS) {
+                blocker.configure(new BlockListener() {
+
+                    @Override
+                    public void unblock() {
+                        activeBlockers.put(blocker, true);
+                    }
+
+                    @Override
+                    public void block() {
+                        activeBlockers.remove(blocker);
+                        if (activeBlockers.size() == 0) {
+                            blockingManagerThread.notify();
+                        }
+                    }
+                }, context);
+            }
             blockingManagerThread = new Thread(new Runnable() {
 
                 @Override
@@ -264,15 +245,16 @@ public final class BlockingManagerImpl implements BlueprintListener, FrameworkLi
 
     private void waitForTestsToStart() {
         synchronized (testRunningWaiter) {
-            while (((blockerBlueprintBundles.size() > 0) || (systemBundle.getState() != Bundle.ACTIVE))
-                    && !stopped.get()) {
+            while (!stopped.get()
+                    && activeBlockers.size() > 0) {
                 LOGGER.info(testRunnerQueue.size() + " test runners are waiting to run");
                 try {
                     testRunningWaiter.wait(BLOCKING_CAUSE_LOG_PERIOD);
-                    if (blockerBlueprintBundles.size() > 0) {
+                    if (activeBlockers.size() > 0 && !stopped.get()) {
                         logBlockCauses();
                     }
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     LOGGER.error("Test running waiting was interrupted");
                     stop();
                 }

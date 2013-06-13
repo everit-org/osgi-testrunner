@@ -1,5 +1,7 @@
 package org.everit.osgi.dev.testrunner.blocking;
 
+import org.osgi.framework.BundleContext;
+
 /*
  * Copyright (c) 2011, Everit Kft.
  *
@@ -44,7 +46,7 @@ public interface BlockingManager {
      * Running tests from the queue. This method should be called from a new thread as it waits until all of the events
      * are finished that may make tests not available.
      */
-    void start();
+    void start(BundleContext context);
 
     /**
      * This function takes the thread into waiting state until the set of blocker bundles is empty.
