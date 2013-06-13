@@ -52,8 +52,8 @@
         <url>https://ci.everit.biz/jenkins/job/osgi-testrunner</url>
     </ciManagement>
     <issueManagement>
-            <system>GitHub</system>
-            <url>https://github.com/everit-org/osgi-testrunner/issues</url>
+        <system>GitHub</system>
+        <url>https://github.com/everit-org/osgi-testrunner/issues</url>
     </issueManagement>
     <build>
         <plugins>
@@ -81,13 +81,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.6.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.compendium</artifactId>
-            <version>4.3.0</version>
-            <scope>provided</scope>
+            <version>[1.6.5,2)</version>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
@@ -98,7 +92,19 @@
         <dependency>
             <groupId>org.everit.osgi.bundles</groupId>
             <artifactId>org.everit.osgi.bundles.org.apache.xmlcommons.full</artifactId>
-            <version>1.4.1</version>
+            <version>[1.4.1,2)</version>
+        </dependency>
+        <dependency>
+            <groupId>org.everit.osgi.bundles</groupId>
+            <artifactId>org.everit.osgi.bundles.org.osgi.util.tracker</artifactId>
+            <version>1.5.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.everit.osgi.bundles</groupId>
+            <artifactId>org.everit.osgi.bundles.org.osgi.service.blueprint</artifactId>
+            <version>[1,2)</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
     <repositories>
