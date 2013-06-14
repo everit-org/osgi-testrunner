@@ -212,18 +212,6 @@ public class TestRunnerActivator implements BundleActivator {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestRunnerActivator.class);
 
     /**
-     * The name of the System Property that points to the folder where TEXT based test results should be dumped. This
-     * property is ignored if the {@link TestRunnerActivator#ENV_TEXT_RESULT_FOLDER} is defined.
-     */
-    public static final String SYSPROP_TEXT_RESULT_FOLDER = "org.everit.osgi.testing.runner.textResultDumpFolder";
-
-    /**
-     * The name of the System Property that points to the folder where XML test results should be dumped. This property
-     * is ignored if the {@link TestRunnerActivator#ENV_TEXT_RESULT_FOLDER} is defined.
-     */
-    public static final String SYSPROP_XML_RESULT_FOLDER = "org.everit.osgi.testing.runner.xmlResultDumpFolder";
-
-    /**
      * The name of the file that is written if there is an error during system exit.
      */
     public static final String SYSTEM_EXIT_ERROR_FILE_NAME = "system-exit-error.txt";
