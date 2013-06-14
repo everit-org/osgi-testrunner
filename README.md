@@ -11,7 +11,7 @@ Running OSGi tests
 ------------------
 
 The module picks up every OSGi service that has the service property
-"osgitest=junit4". In case such a service is found it is passed to JUnit.
+**osgitest=junit4**. In case such a service is found it is passed to JUnit.
 Annotations should be placed into the interface the OSGi service implements.
 
 The bundle does not start looking for services until there is any blocking
@@ -26,8 +26,8 @@ cause. Blocking causes can be:
     on a separate thread.
 
 
-Differences from ordinary JUnit tests
--------------------------------------
+Ordinary JUnit tests vs. testrunner bundle
+------------------------------------------
 
 The tests have to be provided as OSGi services and the JUnit annotations
 must be placed into the interface the OSGi services implement.
