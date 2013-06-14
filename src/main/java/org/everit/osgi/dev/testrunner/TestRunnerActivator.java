@@ -174,7 +174,9 @@ public class TestRunnerActivator implements BundleActivator {
                     logStackTrace(e1);
                 } finally {
                     try {
-                        fout.close();
+                        if (fout != null) {
+                            fout.close();
+                        }
                     } catch (IOException e) {
                         logStackTrace(e);
                     }

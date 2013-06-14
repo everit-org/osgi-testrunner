@@ -43,6 +43,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.junit.runner.notification.Failure;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -52,6 +54,11 @@ import org.xml.sax.SAXException;
  * Util class to help dumping test results into files or streams.
  */
 public final class JunitResultUtil {
+
+    /**
+     * The logger of the class.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(JunitResultUtil.class);
 
     /**
      * The number that should be used to get the seconds from a millisec based value during a diviation.
@@ -95,6 +102,7 @@ public final class JunitResultUtil {
     /**
      * Dumping test results in text format.
      * 
+     * @param testId Id of the test.
      * @param testClazz
      *            The class or interface that these test results belong to.
      * @param extendedResult
@@ -136,6 +144,7 @@ public final class JunitResultUtil {
     /**
      * Dumping test results in XML format.
      * 
+     * @param testId Id of the test.
      * @param testClazz
      *            The class or interface that these test results belong to.
      * @param extendedResult
@@ -156,14 +165,11 @@ public final class JunitResultUtil {
             transformer.transform(source, xmlResult);
             writer.flush();
         } catch (TransformerConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error during dumping test results in XML format", e);
         } catch (TransformerException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error during dumping test results in XML format", e);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error during dumping test results in XML format", e);
         }
     }
 
@@ -237,8 +243,7 @@ public final class JunitResultUtil {
             }
             return testSuiteElement;
         } catch (ParserConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error generating test suite node", e);
         }
         return null;
     }
@@ -246,6 +251,7 @@ public final class JunitResultUtil {
     /**
      * Writing the test result in XML format to a file.
      * 
+     * @param testId Id of the test.
      * @param testClazz
      *            The class or interface the test belongs to.
      * @param extendedResult
@@ -277,22 +283,16 @@ public final class JunitResultUtil {
             javax.xml.transform.Result xmlResult = new StreamResult(file);
             transformer.transform(source, xmlResult);
         } catch (ParserConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error during dumping test results in XML format", e);
         } catch (SAXException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error during dumping test results in XML format", e);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error during dumping test results in XML format", e);
         } catch (TransformerConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error during dumping test results in XML format", e);
         } catch (TransformerException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.error("Error during dumping test results in XML format", e);
         }
-
     }
 
     /**
