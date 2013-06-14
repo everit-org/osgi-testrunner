@@ -27,24 +27,24 @@ package org.everit.osgi.dev.testrunner;
 public class GlobalResult {
 
     /**
-     * Number of failures.
-     */
-    private long failureCount = 0;
-
-    /**
      * Number of errors.
      */
     private long errorCount = 0;
 
     /**
-     * Number of tests that ran.
+     * Number of failures.
      */
-    private long runCount = 0;
+    private long failureCount = 0;
 
     /**
      * Number of tests that were ignored.
      */
     private long ignoreCount = 0;
+
+    /**
+     * Number of tests that ran.
+     */
+    private long runCount = 0;
 
     /**
      * The time until all of the tests were running.

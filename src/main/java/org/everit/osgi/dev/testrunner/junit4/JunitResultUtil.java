@@ -59,14 +59,14 @@ public final class JunitResultUtil {
     private static final int MILLISEC_DECIMAL_DIVIDER = 1000;
 
     /**
-     * The smallest number that needs two digit.
-     */
-    private static final int SMALLEST_TWO_DIGIT_DECIMAL = 10;
-
-    /**
      * The smallest number that needs three digits.
      */
     private static final int SMALLEST_THREE_DIGIT_DECIMAL = 100;
+
+    /**
+     * The smallest number that needs two digit.
+     */
+    private static final int SMALLEST_TWO_DIGIT_DECIMAL = 10;
 
     /**
      * Converting the time into String format.
@@ -104,7 +104,8 @@ public final class JunitResultUtil {
      * @throws IOException
      *             if the writer does not work well.
      */
-    public static void dumpTextResult(final Class<?> testClazz, final ExtendedResult extendedResult, String testId,
+    public static void dumpTextResult(final Class<?> testClazz, final ExtendedResult extendedResult,
+            final String testId,
             final Writer writer) throws IOException {
         writer.write("-------------------------------------------------------------------------------\n");
         writer.write("Test set: " + testClazz.getName() + (testId != null ? " (" + testId + ")" : "") + "\n");
@@ -142,7 +143,8 @@ public final class JunitResultUtil {
      * @param writer
      *            The writer the test results will be written to.
      */
-    public static void dumpXmlResult(final Class<?> testClazz, final ExtendedResult extendedResult, String testId,
+    public static void dumpXmlResult(final Class<?> testClazz, final ExtendedResult extendedResult,
+            final String testId,
             final Writer writer) {
 
         try {
@@ -254,7 +256,7 @@ public final class JunitResultUtil {
      *            Whether to append or rewrite the test results to the file.
      */
     public static void writeXmlResultToFile(final Class<?> testClazz, final ExtendedResult extendedResult,
-            final File file, String testId, final boolean append) {
+            final File file, final String testId, final boolean append) {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();

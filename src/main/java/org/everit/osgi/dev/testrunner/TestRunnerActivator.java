@@ -40,13 +40,11 @@ import java.util.Set;
 import org.everit.osgi.dev.testrunner.blocking.BlockingManager;
 import org.everit.osgi.dev.testrunner.blocking.BlockingManagerImpl;
 import org.everit.osgi.dev.testrunner.junit4.Junit4TestRunner;
-import org.everit.osgi.dev.testrunner.util.DependencyUtil;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.launch.Framework;
-import org.osgi.service.blueprint.container.BlueprintListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,30 +53,58 @@ import org.slf4j.LoggerFactory;
  */
 public class TestRunnerActivator implements BundleActivator {
 
-    public static final Set<String> SYSTEM_NON_DAEMON_THREAD_NAMES;
-
-    public static final String SYSTEM_EXIT_ERROR_FILE_NAME = "system-exit-error.txt";
-
-    static {
-        SYSTEM_NON_DAEMON_THREAD_NAMES = new HashSet<String>();
-        SYSTEM_NON_DAEMON_THREAD_NAMES.add("DestroyJavaVM");
-    }
-
+    /**
+     * In case the tests are running during a build the test runner stops the system after every possible test were ran.
+     * This is the thread class that monitors the state of the test runs and logs out notifications if the build has to
+     * wait too much.
+     */
     private class TestFinalizationWaitingShutdownThread extends Thread {
 
+        /**
+         * The context of the testrunner bundle.
+         */
         private BundleContext context;
 
+        /**
+         * The folder where the {@link TestRunnerActivator#SYSTEM_EXIT_ERROR_FILE_NAME} file will be written.
+         */
         private String resultFolder;
 
-        public TestFinalizationWaitingShutdownThread(BundleContext context, String resultFolder) {
+        public TestFinalizationWaitingShutdownThread(final BundleContext context, final String resultFolder) {
             super();
             this.context = context;
             this.resultFolder = resultFolder;
         }
 
+        private List<Thread> countBlockingThreads() {
+            List<Thread> result = new ArrayList<Thread>();
+            Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
+            for (Entry<Thread, StackTraceElement[]> threadAndStackTrace : allStackTraces.entrySet()) {
+                Thread thread = threadAndStackTrace.getKey();
+                if (!thread.isDaemon() && !Thread.State.TERMINATED.equals(thread.getState())
+                        && !thread.equals(Thread.currentThread())
+                        && !SYSTEM_NON_DAEMON_THREAD_NAMES.contains(thread.getName())) {
+                    result.add(thread);
+                }
+            }
+            return result;
+        }
+
+        private void logStackTrace(final Exception e) {
+            logStackTrace(e, null);
+        }
+
+        private void logStackTrace(final Exception e, final PrintWriter pw) {
+            if (pw != null) {
+                e.printStackTrace(pw);
+            } else {
+                e.printStackTrace();
+            }
+        }
+
         @Override
         public void run() {
-            blockingManager.start();
+            blockingManager.start(context);
             blockingManager.waitForTestResults();
 
             Framework framework = (Framework) context.getBundle(0);
@@ -87,10 +113,9 @@ public class TestRunnerActivator implements BundleActivator {
                 framework.stop();
                 framework.waitForStop(0);
             } catch (BundleException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                logStackTrace(e);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logStackTrace(e);
             }
 
             List<Thread> blockingThreads = countBlockingThreads();
@@ -103,16 +128,15 @@ public class TestRunnerActivator implements BundleActivator {
                     canBeStopped = blockingThreads.size() == 0;
                     if (!canBeStopped) {
                         long currentTime = new Date().getTime();
-                        if (currentTime - threadBlockCheckStartTime > shutdownTimeout) {
+                        if ((currentTime - threadBlockCheckStartTime) > shutdownTimeout) {
                             canBeStopped = true;
                         }
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logStackTrace(e);
                     canBeStopped = true;
                 }
             }
-            
 
             if (blockingThreads.size() > 0) {
                 StringWriter sw = new StringWriter();
@@ -133,7 +157,7 @@ public class TestRunnerActivator implements BundleActivator {
                         thread.interrupt();
                     } catch (SecurityException e) {
                         pw.println("Error during interrupting the thread");
-                        e.printStackTrace(pw);
+                        logStackTrace(e, pw);
                     }
                 }
                 System.out.print(sw.toString());
@@ -144,47 +168,21 @@ public class TestRunnerActivator implements BundleActivator {
                     try {
                         fout.write(sw.toString().getBytes(Charset.forName("UTF8")));
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logStackTrace(e);
                     }
                 } catch (FileNotFoundException e1) {
-                    e1.printStackTrace();
+                    logStackTrace(e1);
                 } finally {
                     try {
                         fout.close();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logStackTrace(e);
                     }
                 }
             }
             System.exit(0);
         }
-
-        private List<Thread> countBlockingThreads() {
-            List<Thread> result = new ArrayList<Thread>();
-            Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
-            for (Entry<Thread, StackTraceElement[]> threadAndStackTrace : allStackTraces.entrySet()) {
-                Thread thread = threadAndStackTrace.getKey();
-                if (!thread.isDaemon() && !Thread.State.TERMINATED.equals(thread.getState())
-                        && !thread.equals(Thread.currentThread())
-                        && !SYSTEM_NON_DAEMON_THREAD_NAMES.contains(thread.getName())) {
-                    result.add(thread);
-                }
-            }
-            return result;
-        }
     }
-
-    /**
-     * The name of the System Property that points to the folder where XML test results should be dumped. This property
-     * is ignored if the {@link TestRunnerActivator#ENV_TEXT_RESULT_FOLDER} is defined.
-     */
-    public static final String SYSPROP_XML_RESULT_FOLDER = "org.everit.osgi.testing.runner.xmlResultDumpFolder";
-
-    /**
-     * The name of the System Property that points to the folder where TEXT based test results should be dumped. This
-     * property is ignored if the {@link TestRunnerActivator#ENV_TEXT_RESULT_FOLDER} is defined.
-     */
-    public static final String SYSPROP_TEXT_RESULT_FOLDER = "org.everit.osgi.testing.runner.textResultDumpFolder";
 
     /**
      * The name of the Environment Variable that points to the folder where TEXT and XML based test results should be
@@ -198,10 +196,32 @@ public class TestRunnerActivator implements BundleActivator {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestRunnerActivator.class);
 
     /**
-     * A service is created by this activator that listens for blueprint events. This is necessary in order to block the
-     * test runner code until each bundle arrives to the state of CREATED or FAILED in case of Blueprint bundles.
+     * The name of the System Property that points to the folder where TEXT based test results should be dumped. This
+     * property is ignored if the {@link TestRunnerActivator#ENV_TEXT_RESULT_FOLDER} is defined.
      */
-    private ServiceRegistration blueprintServiceRegistration;
+    public static final String SYSPROP_TEXT_RESULT_FOLDER = "org.everit.osgi.testing.runner.textResultDumpFolder";
+
+    /**
+     * The name of the System Property that points to the folder where XML test results should be dumped. This property
+     * is ignored if the {@link TestRunnerActivator#ENV_TEXT_RESULT_FOLDER} is defined.
+     */
+    public static final String SYSPROP_XML_RESULT_FOLDER = "org.everit.osgi.testing.runner.xmlResultDumpFolder";
+
+    /**
+     * The name of the file that is written if there is an error during system exit.
+     */
+    public static final String SYSTEM_EXIT_ERROR_FILE_NAME = "system-exit-error.txt";
+
+    /**
+     * The name of non-daemon threads that are started by the system. These threads do not have to be interrupted before
+     * a system exit.
+     */
+    public static final Set<String> SYSTEM_NON_DAEMON_THREAD_NAMES;
+
+    static {
+        SYSTEM_NON_DAEMON_THREAD_NAMES = new HashSet<String>();
+        SYSTEM_NON_DAEMON_THREAD_NAMES.add("DestroyJavaVM");
+    }
 
     /**
      * The blocking manager instance that is registered as a framework listener, a blueprint listener and as a service.
@@ -225,16 +245,8 @@ public class TestRunnerActivator implements BundleActivator {
 
         blockingManager = new BlockingManagerImpl(context);
 
-        context.addFrameworkListener(blockingManager);
-
         blockingManagerServiceRegistration = context.registerService(BlockingManager.class.getName(), blockingManager,
                 new Hashtable<String, String>());
-
-        if (DependencyUtil.isBlueprintAvailable()) {
-        blueprintServiceRegistration = context.registerService(BlueprintListener.class.getName(),
-                blockingManager,
-                new Hashtable<String, Object>());
-        }
 
         Junit4TestRunner junit4TestRunner = new Junit4TestRunner(resultDumpFolder, resultDumpFolder, context);
         blockingManager.addTestRunner(junit4TestRunner);
@@ -244,10 +256,10 @@ public class TestRunnerActivator implements BundleActivator {
             new TestFinalizationWaitingShutdownThread(context, resultDumpFolder).start();
         } else {
             new Thread(new Runnable() {
-                
+
                 @Override
                 public void run() {
-                    blockingManager.start();
+                    blockingManager.start(context);
                 }
             }).start();
         }
@@ -258,10 +270,7 @@ public class TestRunnerActivator implements BundleActivator {
         if (blockingManager != null) {
             blockingManager.stop();
         }
-        if (blueprintServiceRegistration != null) {
-            blueprintServiceRegistration.unregister();
-            blueprintServiceRegistration = null;
-        }
+
         if (blockingManagerServiceRegistration != null) {
             blockingManagerServiceRegistration.unregister();
             blockingManagerServiceRegistration = null;

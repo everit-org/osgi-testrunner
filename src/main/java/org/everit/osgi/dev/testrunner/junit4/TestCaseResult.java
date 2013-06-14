@@ -37,9 +37,9 @@ public class TestCaseResult {
     private Description description;
 
     /**
-     * The starting time of the TestCase.
+     * The Failure description if the TestCase failed.
      */
-    private Long startTime;
+    private Failure failure;
 
     /**
      * The time the TestCase stopped to run.
@@ -47,9 +47,9 @@ public class TestCaseResult {
     private Long finishTime;
 
     /**
-     * The Failure description if the TestCase failed.
+     * The starting time of the TestCase.
      */
-    private Failure failure;
+    private Long startTime;
 
     /**
      * Constructor of the class that sets the properties that should be available already.

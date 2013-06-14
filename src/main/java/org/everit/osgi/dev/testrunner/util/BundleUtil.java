@@ -23,12 +23,19 @@ package org.everit.osgi.dev.testrunner.util;
 
 import org.osgi.framework.Bundle;
 
-public class BundleUtil {
+/**
+ * Util functions for Bundle related questions.
+ */
+public final class BundleUtil {
 
-    private BundleUtil() {
-    }
-    
-    public static final String getBundleStateName(int bundleState) {
+    /**
+     * Getting the name of a bundle state by it's integer based index value.
+     * 
+     * @param bundleState
+     *            The bundle state integer representation.
+     * @return The String name of the bundle state.
+     */
+    public static String getBundleStateName(final int bundleState) {
         String result = null;
         switch (bundleState) {
         case Bundle.INSTALLED:
@@ -54,6 +61,9 @@ public class BundleUtil {
             break;
         }
         return result;
+    }
+
+    private BundleUtil() {
     }
 
 }

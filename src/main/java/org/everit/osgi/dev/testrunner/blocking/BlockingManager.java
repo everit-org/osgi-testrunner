@@ -32,7 +32,7 @@ public interface BlockingManager {
     /**
      * Environment variable that indicates that the framework should be stopped after running the tests.
      */
-    public static final String ENV_STOP_AFTER_TESTS = "EOSGI_STOP_AFTER_TESTS";
+    String ENV_STOP_AFTER_TESTS = "EOSGI_STOP_AFTER_TESTS";
 
     /**
      * Adding a new test runner that may run tests after the framework fully started.
@@ -45,14 +45,20 @@ public interface BlockingManager {
     /**
      * Running tests from the queue. This method should be called from a new thread as it waits until all of the events
      * are finished that may make tests not available.
+     * 
+     * @param context
+     *            The {@link BundleContext} of the testrunner bundle.
      */
     void start(BundleContext context);
+
+    /**
+     * Stopping the blocking manager. No tests will be run after this.
+     */
+    void stop();
 
     /**
      * This function takes the thread into waiting state until the set of blocker bundles is empty.
      */
     void waitForTestResults();
-
-    void stop();
 
 }

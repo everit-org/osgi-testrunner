@@ -32,9 +32,9 @@ import java.util.List;
 public class ExtendedResult {
 
     /**
-     * The results of TestCases that ran.
+     * The count of errors.
      */
-    private List<TestCaseResult> testCaseResults = new ArrayList<TestCaseResult>();
+    private long errorCount = 0;
 
     /**
      * The count of failures.
@@ -42,19 +42,14 @@ public class ExtendedResult {
     private long failureCount = 0;
 
     /**
-     * The count of errors.
-     */
-    private long errorCount = 0;
-
-    /**
-     * The time the test was started.
-     */
-    private long startTime;
-
-    /**
      * The time when the test finished running.
      */
     private Long finishTime;
+
+    /**
+     * The count of tests that were ignored.
+     */
+    private long ignoreCount = 0;
 
     /**
      * The count of tests that ran.
@@ -62,9 +57,14 @@ public class ExtendedResult {
     private long runCount = 0;
 
     /**
-     * The count of tests that were ignored.
+     * The time the test was started.
      */
-    private long ignoreCount = 0;
+    private long startTime;
+
+    /**
+     * The results of TestCases that ran.
+     */
+    private List<TestCaseResult> testCaseResults = new ArrayList<TestCaseResult>();
 
     /**
      * Constructor of the class.
