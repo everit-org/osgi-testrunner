@@ -123,7 +123,8 @@ public class TestRunnerActivator implements BundleActivator {
             long threadBlockCheckStartTime = new Date().getTime();
             while (!canBeStopped) {
                 try {
-                    Thread.sleep(100);
+                    final int stoppingWaitingPeriodInMs = 100;
+                    Thread.sleep(stoppingWaitingPeriodInMs);
                     blockingThreads = countBlockingThreads();
                     canBeStopped = blockingThreads.size() == 0;
                     if (!canBeStopped) {
@@ -142,8 +143,8 @@ public class TestRunnerActivator implements BundleActivator {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 pw.println("THERE ARE NON-DEAMON THREADS THAT BLOCK STOPPING THE OSGi CONTAINER\n");
-                pw.println("Calling interrupt on blocking threads. " +
-                        "If the JVM does not stop after this well there is a serious problem in the code.");
+                pw.println("Calling interrupt on blocking threads. "
+                        + "If the JVM does not stop after this well there is a serious problem in the code.");
 
                 for (Thread thread : blockingThreads) {
                     pw.println("[WARN] Thread [name="
@@ -185,6 +186,11 @@ public class TestRunnerActivator implements BundleActivator {
             System.exit(0);
         }
     }
+
+    /**
+     * The time in ms until the testrunner will wait for non-deamon threads stopping before exiting the vm.
+     */
+    public static final int DEFAULT_SHUTDOWN_TIMEOUT = 5000;
 
     /**
      * The name of the Environment Variable that points to the folder where TEXT and XML based test results should be
@@ -238,7 +244,7 @@ public class TestRunnerActivator implements BundleActivator {
     /**
      * The timeout while the test runner will wait for blocking threads before starting to interrupt them.
      */
-    private int shutdownTimeout = 5000;
+    private int shutdownTimeout = DEFAULT_SHUTDOWN_TIMEOUT;
 
     @Override
     public void start(final BundleContext context) throws Exception {
