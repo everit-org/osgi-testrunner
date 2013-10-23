@@ -28,8 +28,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 
-import org.everit.osgi.dev.testrunner.GlobalResult;
-import org.everit.osgi.dev.testrunner.TestResultContainer;
 import org.everit.osgi.dev.testrunner.blocking.BlockedTestRunner;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
@@ -45,7 +43,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Runs all JUnit4 based tests that are provided as a service in this OSGI container.
  */
-public class Junit4TestRunner implements BlockedTestRunner, ServiceTrackerCustomizer {
+public class Junit4TestRunner implements BlockedTestRunner, ServiceTrackerCustomizer<Object, Object> {
 
     /**
      * The logger of the class.
@@ -60,7 +58,7 @@ public class Junit4TestRunner implements BlockedTestRunner, ServiceTrackerCustom
     /**
      * The service tracker that picks up junit4 test services. The customizer is the current object.
      */
-    private ServiceTracker junit4ServiceTracker;
+    private ServiceTracker<Object, Object> junit4ServiceTracker;
 
     /**
      * The folder where the test results should be appended in text format.
@@ -132,11 +130,6 @@ public class Junit4TestRunner implements BlockedTestRunner, ServiceTrackerCustom
                     runner.run(notifier);
                     ExtendedResult extendedResult = extendedResultListener.getResult();
                     extendedResult.finishRunning();
-                    long failureCount = extendedResult.getFailureCount();
-                    long errorCount = extendedResult.getErrorCount();
-                    long runCount = extendedResult.getRunCount();
-                    long ignoreCount = extendedResult.getIgnoreCount();
-                    long runTime = extendedResult.getRunTime();
 
                     if (textResultDumpFolder != null) {
                         File folder = new File(textResultDumpFolder);
@@ -173,14 +166,6 @@ public class Junit4TestRunner implements BlockedTestRunner, ServiceTrackerCustom
                         LOGGER.error("Error during dumping the test results in TEXT format", e);
                     }
                     pw.flush();
-
-                    GlobalResult globalPartResult = new GlobalResult();
-                    globalPartResult.setErrorCount(errorCount);
-                    globalPartResult.setFailureCount(failureCount);
-                    globalPartResult.setIgnoreCount(ignoreCount);
-                    globalPartResult.setRunCount(runCount);
-                    globalPartResult.setRunTime(runTime);
-                    TestResultContainer.addToGlobalResult(globalPartResult);
                 } catch (InitializationError e) {
                     LOGGER.error("Could not initialize Junit runner", e);
                 } catch (ClassNotFoundException e) {
@@ -196,8 +181,9 @@ public class Junit4TestRunner implements BlockedTestRunner, ServiceTrackerCustom
     @Override
     public void start() {
         try {
-            junit4ServiceTracker = new ServiceTracker(bundleContext, bundleContext.createFilter("(osgitest=junit4)"),
-                    this);
+            junit4ServiceTracker =
+                    new ServiceTracker<Object, Object>(bundleContext, bundleContext.createFilter("(osgitest=junit4)"),
+                            this);
             junit4ServiceTracker.open();
         } catch (InvalidSyntaxException e) {
             LOGGER.error("Error during creation JUnit4 TestServiceTracker", e);
