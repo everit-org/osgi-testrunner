@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.junit4;
+package org.everit.osgi.dev.testrunner.internal.junit4;
 
 /*
  * Copyright (c) 2011, Everit Kft.

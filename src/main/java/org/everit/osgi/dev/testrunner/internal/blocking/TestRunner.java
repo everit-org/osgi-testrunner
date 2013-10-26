@@ -1,4 +1,6 @@
-package org.everit.osgi.dev.testrunner.blocking;
+package org.everit.osgi.dev.testrunner.internal.blocking;
+
+import org.osgi.framework.ServiceReference;
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -25,7 +27,7 @@ package org.everit.osgi.dev.testrunner.blocking;
  * The class that implements this interface can run tests after the framework is started and all Blueprint bundles are
  * either started or failed.
  */
-public interface BlockedTestRunner {
+public interface TestRunner {
 
     /**
      * Starting the test runner.
@@ -36,5 +38,7 @@ public interface BlockedTestRunner {
      * Stopping the test runner.
      */
     void stop();
+    
+    void runTest(ServiceReference<Object> reference);
 
 }

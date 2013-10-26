@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.blocking;
+package org.everit.osgi.dev.testrunner.internal.blocking;
 
 import org.osgi.framework.BundleContext;
 
@@ -40,7 +40,7 @@ public interface BlockingManager {
      * @param testRunner
      *            The test runner.
      */
-    void addTestRunner(BlockedTestRunner testRunner);
+    void addTestRunner(TestRunner testRunner);
 
     /**
      * Running tests from the queue. This method should be called from a new thread as it waits until all of the events
@@ -59,6 +59,6 @@ public interface BlockingManager {
     /**
      * This function takes the thread into waiting state until the set of blocker bundles is empty.
      */
-    void waitForTestResults();
+    void waitForTestResultsAfterStartup();
 
 }

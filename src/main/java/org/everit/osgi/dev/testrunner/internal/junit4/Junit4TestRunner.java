@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.junit4;
+package org.everit.osgi.dev.testrunner.internal.junit4;
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -28,7 +28,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 
-import org.everit.osgi.dev.testrunner.blocking.BlockedTestRunner;
+import org.everit.osgi.dev.testrunner.internal.blocking.TestRunner;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.osgi.framework.BundleContext;
@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Runs all JUnit4 based tests that are provided as a service in this OSGI container.
  */
-public class Junit4TestRunner implements BlockedTestRunner, ServiceTrackerCustomizer<Object, Object> {
+public class Junit4TestRunner implements TestRunner, ServiceTrackerCustomizer<Object, Object> {
 
     /**
      * The logger of the class.
@@ -89,22 +89,22 @@ public class Junit4TestRunner implements BlockedTestRunner, ServiceTrackerCustom
     }
 
     @Override
-    public Object addingService(final ServiceReference reference) {
+    public Object addingService(final ServiceReference<Object> reference) {
         runTest(reference);
         return null;
     }
 
     @Override
-    public void modifiedService(final ServiceReference reference, final Object service) {
+    public void modifiedService(final ServiceReference<Object> reference, final Object service) {
         // Do nothing
     }
 
     @Override
-    public void removedService(final ServiceReference reference, final Object service) {
+    public void removedService(final ServiceReference<Object> reference, final Object service) {
         // Do nothing
     }
 
-    private void runTest(final ServiceReference reference) {
+    public void runTest(final ServiceReference<Object> reference) {
         LOGGER.info("Test OSGI Service is caughed, will be run by JUnit: " + reference.toString());
         try {
             Object testIdObject = reference.getProperty("osgitest.id");

@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner;
+package org.everit.osgi.dev.testrunner.internal;
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -31,19 +31,17 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.everit.osgi.dev.testrunner.blocking.BlockingManager;
-import org.everit.osgi.dev.testrunner.blocking.BlockingManagerImpl;
-import org.everit.osgi.dev.testrunner.junit4.Junit4TestRunner;
+import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManager;
+import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
+import org.everit.osgi.dev.testrunner.internal.junit4.Junit4TestRunner;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.launch.Framework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,7 +103,7 @@ public class TestRunnerActivator implements BundleActivator {
         @Override
         public void run() {
             blockingManager.start(context);
-            blockingManager.waitForTestResults();
+            blockingManager.waitForTestResultsAfterStartup();
 
             stopFramework();
 
@@ -232,10 +230,6 @@ public class TestRunnerActivator implements BundleActivator {
      */
     private BlockingManagerImpl blockingManager;
 
-    /**
-     * Service registration of Blocking Manager that starts tests after the framework is started.
-     */
-    private ServiceRegistration blockingManagerServiceRegistration;
 
     /**
      * The timeout while the test runner will wait for blocking threads before starting to interrupt them.
@@ -248,9 +242,6 @@ public class TestRunnerActivator implements BundleActivator {
         String resultDumpFolder = System.getenv(ENV_TEST_RESULT_FOLDER);
 
         blockingManager = new BlockingManagerImpl(context);
-
-        blockingManagerServiceRegistration = context.registerService(BlockingManager.class.getName(), blockingManager,
-                new Hashtable<String, String>());
 
         Junit4TestRunner junit4TestRunner = new Junit4TestRunner(resultDumpFolder, resultDumpFolder, context);
         blockingManager.addTestRunner(junit4TestRunner);
@@ -273,11 +264,6 @@ public class TestRunnerActivator implements BundleActivator {
     public void stop(final BundleContext context) throws Exception {
         if (blockingManager != null) {
             blockingManager.stop();
-        }
-
-        if (blockingManagerServiceRegistration != null) {
-            blockingManagerServiceRegistration.unregister();
-            blockingManagerServiceRegistration = null;
         }
     }
 }

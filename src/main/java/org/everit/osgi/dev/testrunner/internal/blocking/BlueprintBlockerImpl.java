@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.blocking;
+package org.everit.osgi.dev.testrunner.internal.blocking;
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -52,7 +52,7 @@ public class BlueprintBlockerImpl implements Blocker, BlueprintListener {
      * A service is created by this activator that listens for blueprint events. This is necessary in order to block the
      * test runner code until each bundle arrives to the state of CREATED or FAILED in case of Blueprint bundles.
      */
-    private ServiceRegistration blueprintServiceRegistration;
+    private ServiceRegistration<BlueprintListener> blueprintServiceRegistration;
 
     /**
      * Helper object for thread synchronization.
@@ -133,7 +133,7 @@ public class BlueprintBlockerImpl implements Blocker, BlueprintListener {
     @Override
     public void start(final BlockListener listener, final BundleContext context) {
         blockListener = listener;
-        blueprintServiceRegistration = context.registerService(BlueprintListener.class.getName(),
+        blueprintServiceRegistration = context.registerService(BlueprintListener.class,
                 this,
                 new Hashtable<String, Object>());
     }

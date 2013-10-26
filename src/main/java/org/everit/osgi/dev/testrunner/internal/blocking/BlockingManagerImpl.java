@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.blocking;
+package org.everit.osgi.dev.testrunner.internal.blocking;
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -29,8 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.everit.osgi.dev.testrunner.util.BundleUtil;
-import org.everit.osgi.dev.testrunner.util.DependencyUtil;
+import org.everit.osgi.dev.testrunner.internal.util.BundleUtil;
+import org.everit.osgi.dev.testrunner.internal.util.DependencyUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
@@ -94,7 +94,7 @@ public final class BlockingManagerImpl implements BlockingManager {
     /**
      * Test runners that were started by this manager.
      */
-    private Map<BlockedTestRunner, Boolean> startedTestRunners = new ConcurrentHashMap<BlockedTestRunner, Boolean>();
+    private Map<TestRunner, Boolean> startedTestRunners = new ConcurrentHashMap<TestRunner, Boolean>();
 
     /**
      * A flag that indicates whether this manager is stopped or not.
@@ -114,7 +114,7 @@ public final class BlockingManagerImpl implements BlockingManager {
     /**
      * The queue of tests that will run.
      */
-    private final Queue<BlockedTestRunner> testRunnerQueue = new ConcurrentLinkedQueue<BlockedTestRunner>();
+    private final Queue<TestRunner> testRunnerQueue = new ConcurrentLinkedQueue<TestRunner>();
 
     /**
      * Helper object to be able to wait until framework is launched and all blueprint bundles are either started or
@@ -133,7 +133,7 @@ public final class BlockingManagerImpl implements BlockingManager {
     }
 
     @Override
-    public void addTestRunner(final BlockedTestRunner testRunner) {
+    public void addTestRunner(final TestRunner testRunner) {
         LOGGER.info("Adding test runner to the queue: " + testRunner.toString());
         testRunnerQueue.add(testRunner);
     }
@@ -213,7 +213,7 @@ public final class BlockingManagerImpl implements BlockingManager {
                     waitForTestsToStart();
                     if (!stopped.get()) {
                         logNonStartedBundles();
-                        BlockedTestRunner testRunner = testRunnerQueue.peek();
+                        TestRunner testRunner = testRunnerQueue.peek();
                         while ((testRunner != null) && !stopped.get()) {
                             testRunner.start();
                             startedTestRunners.put(testRunner, Boolean.TRUE);
@@ -250,14 +250,14 @@ public final class BlockingManagerImpl implements BlockingManager {
     }
 
     private void stopStartedTestRunners() {
-        for (BlockedTestRunner testRunner : startedTestRunners.keySet()) {
+        for (TestRunner testRunner : startedTestRunners.keySet()) {
             testRunner.stop();
         }
 
     }
 
     @Override
-    public void waitForTestResults() {
+    public void waitForTestResultsAfterStartup() {
         synchronized (testResultGettingWaiter) {
             while (((activeBlockers.size() > 0) || (testRunnerQueue.size() > 0)) && !stopped.get()) {
                 try {

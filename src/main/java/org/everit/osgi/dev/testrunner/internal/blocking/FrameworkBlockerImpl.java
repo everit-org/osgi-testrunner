@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.blocking;
+package org.everit.osgi.dev.testrunner.internal.blocking;
 
 /*
  * Copyright (c) 2011, Everit Kft.

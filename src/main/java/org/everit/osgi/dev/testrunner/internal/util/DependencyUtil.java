@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.util;
+package org.everit.osgi.dev.testrunner.internal.util;
 
 /*
  * Copyright (c) 2011, Everit Kft.
