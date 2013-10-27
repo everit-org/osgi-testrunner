@@ -21,12 +21,12 @@ package org.everit.osgi.dev.testrunner.internal;
  * MA 02110-1301  USA
  */
 
-import org.everit.osgi.dev.testrunner.engine.TestRunnerEngine;
+import org.everit.osgi.dev.testrunner.engine.TestEngine;
 
 public interface TestRunnerEngineTracker {
 
     /**
      * Returns a test runner for the engine type if available, otherwise null.
      */
-    TestRunnerEngine getEngineByType(String testEngineType);
+    TestEngine getEngineByType(String testEngineType);
 }

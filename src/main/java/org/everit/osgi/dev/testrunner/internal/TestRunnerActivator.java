@@ -38,10 +38,9 @@ import java.util.Map.Entry;
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
 import org.everit.osgi.dev.testrunner.blocking.Blocker;
-import org.everit.osgi.dev.testrunner.engine.TestRunnerEngine;
+import org.everit.osgi.dev.testrunner.engine.TestEngine;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
 import org.everit.osgi.dev.testrunner.internal.blocking.FrameworkBlockerImpl;
-import org.everit.osgi.dev.testrunner.internal.junit4.Junit4TestRunner;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -219,8 +218,6 @@ public class TestRunnerActivator implements BundleActivator {
      */
     private BlockingManagerImpl blockingManager;
 
-    private ServiceRegistration<TestRunnerEngine> junit4TestRunnerSR;
-
     private ServiceRegistration<TestManager> testManagerSR;
 
     private ServiceRegistration<Blocker> frameworkBlockerSR;
@@ -253,11 +250,6 @@ public class TestRunnerActivator implements BundleActivator {
 
         blockingManager = new BlockingManagerImpl(context);
         blockingManager.start();
-
-        Junit4TestRunner junit4TestRunner = new Junit4TestRunner(context);
-        Hashtable<String, Object> junit4RunnerProps = new Hashtable<String, Object>();
-        junit4RunnerProps.put(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE, "junit4");
-        junit4TestRunnerSR = context.registerService(TestRunnerEngine.class, junit4TestRunner, junit4RunnerProps);
 
         testRunnerEngineServiceTracker = new TestRunnerEngineServiceTracker(context);
         testRunnerEngineServiceTracker.open();
@@ -292,9 +284,6 @@ public class TestRunnerActivator implements BundleActivator {
     public void stop(final BundleContext context) throws Exception {
         if (testServiceTracker != null) {
             testServiceTracker.close();
-        }
-        if (junit4TestRunnerSR != null) {
-            junit4TestRunnerSR.unregister();
         }
         if (testManagerSR != null) {
             testManagerSR.unregister();

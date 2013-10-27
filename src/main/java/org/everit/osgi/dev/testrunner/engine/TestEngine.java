@@ -28,7 +28,7 @@ import org.osgi.framework.ServiceReference;
 /**
  * The class that implements this interface can run tests after the framework is started.
  */
-public interface TestRunnerEngine {
+public interface TestEngine {
 
     /**
      * Runs a test based on the service reference. The function is not called multiple times parallel.

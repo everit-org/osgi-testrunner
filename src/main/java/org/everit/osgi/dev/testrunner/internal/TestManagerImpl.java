@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
-import org.everit.osgi.dev.testrunner.engine.TestRunnerEngine;
+import org.everit.osgi.dev.testrunner.engine.TestEngine;
 import org.osgi.framework.Filter;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
@@ -130,11 +130,12 @@ public class TestManagerImpl implements TestManager {
         Object engineTypeObject = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if (engineTypeObject == null || !(engineTypeObject instanceof String)) {
             LOGGER.warn("Unrecognized '" + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
-                    + "' service property value for test. Ignoring: " + reference.toString());
+                    + "' service property value for test. Are you sure the test engine is available? Ignoring: "
+                    + reference.toString());
             return null;
         }
 
-        TestRunnerEngine runnerEngine = testRunnerEngineTracker.getEngineByType((String) engineTypeObject);
+        TestEngine runnerEngine = testRunnerEngineTracker.getEngineByType((String) engineTypeObject);
         if (runnerEngine == null) {
             LOGGER.warn("No test runner available for type '" + engineTypeObject + "'. Ignoring test: "
                     + reference.toString());
