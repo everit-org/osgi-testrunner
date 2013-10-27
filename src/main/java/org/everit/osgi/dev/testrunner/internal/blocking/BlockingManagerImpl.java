@@ -57,7 +57,6 @@ public final class BlockingManagerImpl {
 
                 @Override
                 public void unblock() {
-                    System.out.println("Unblock called");
                     activeBlockers.remove(blocker);
                     if (activeBlockers.size() == 0) {
                         synchronized (testRunningWaiter) {
@@ -68,7 +67,6 @@ public final class BlockingManagerImpl {
 
                 @Override
                 public void block() {
-                    System.out.println("block called");
                     activeBlockers.put(blocker, true);
                 }
             };
@@ -243,7 +241,6 @@ public final class BlockingManagerImpl {
     public boolean waitForTestsToStart(long timeout) {
         synchronized (testRunningWaiter) {
             try {
-                System.out.println("Active blockers size: " + activeBlockers.size());
                 if (!stopped.get() && activeBlockers.size() > 0) {
                     
                     testRunningWaiter.wait(timeout);

@@ -200,6 +200,7 @@ public class TestRunnerActivator implements BundleActivator {
                 System.out.println("Starting to wait for stop framework");
                 framework.waitForStop(0);
                 System.out.println("framework stopped");
+                System.out.flush();
             } catch (BundleException e) {
                 logStackTrace(e);
             } catch (InterruptedException e) {
@@ -269,7 +270,6 @@ public class TestRunnerActivator implements BundleActivator {
             @Override
             public void run() {
                 boolean testsCanBeStarted = blockingManager.waitForTestsToStart(0);
-                System.out.println("WaitForTestsToStart arrived back with " + testsCanBeStarted);
                 if (testsCanBeStarted) {
                     testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager);
                     testServiceTracker.open();

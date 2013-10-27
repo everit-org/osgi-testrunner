@@ -66,7 +66,6 @@ public class FrameworkBlockerImpl extends AbstractBlocker {
             @Override
             public void frameworkEvent(FrameworkEvent event) {
                 if (event.getType() == FrameworkEvent.STARTED) {
-                    System.out.println("Framework started and caught this by framework blocker.");
                     blocking = false;
                     notifyListenersAboutUnblock();
                 }
@@ -77,11 +76,9 @@ public class FrameworkBlockerImpl extends AbstractBlocker {
         
         Bundle frameworkBundle = bundleContext.getBundle(0);
         if (frameworkBundle.getState() != Bundle.ACTIVE) {
-            System.out.println("Framework not started so blocking");
             blocking = true;
             notifyListenersAboutBlock();
         } else {
-            System.out.println("Framework started already so no blocking is necessary at all.");
             blocking = false;
         }
 

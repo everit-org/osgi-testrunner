@@ -142,7 +142,7 @@ public class TestManagerImpl implements TestManager {
         }
 
         List<TestClassResult> result = runnerEngine.runTest(reference);
-        LOGGER.info("Test result: " + result.toString());
+        LOGGER.debug("Test result: " + result.toString());
         return result;
 
     }
