@@ -66,7 +66,11 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Activator>org.everit.osgi.dev.testrunner.internal.TestRunnerActivator</Bundle-Activator>
                         <Import-Package>org.osgi.service.blueprint.*;resolution:=optional,*</Import-Package>
-                        <Export-Package>org.everit.osgi.dev.testrunner</Export-Package>
+                        <Export-Package>
+                            org.everit.osgi.dev.testrunner,
+                            org.everit.osgi.dev.testrunner.blocking,
+                            org.everit.osgi.dev.testrunner.engine
+                        </Export-Package>
                     </instructions>
                 </configuration>
             </plugin>
