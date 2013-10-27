@@ -157,8 +157,7 @@ public final class ResultUtil {
      * @param writer
      *            The writer the test results will be written to.
      */
-    public static void dumpXmlResult(final TestClassResult testClassResult,
-            final String testId, final Writer writer) {
+    public static void dumpXmlResult(final TestClassResult testClassResult, final String testId, final Writer writer) {
 
         try {
             Node testSuiteElement = ResultUtil.generateTestSuiteNode(testClassResult);
@@ -175,6 +174,21 @@ public final class ResultUtil {
         } catch (IOException e) {
             LOGGER.error("Error during dumping test results in XML format", e);
         }
+    }
+
+    public static String generateFileNameWithoutExtension(final String testClassName, final String testId,
+            final boolean includeDate) {
+        StringBuilder sb = new StringBuilder(testClassName);
+        if (testId != null) {
+            sb.append("_").append(testId);
+        }
+        if (includeDate) {
+            sb.append("_");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("YYYYMMddHHmmss");
+            String formattedDate = dateFormat.format(new Date());
+            sb.append(formattedDate);
+        }
+        return sb.toString();
     }
 
     /**
@@ -247,28 +261,32 @@ public final class ResultUtil {
         return null;
     }
 
-    public static String generateFileNameWithoutExtension(String testClassName,
-            String testId, boolean includeDate) {
-        StringBuilder sb = new StringBuilder(testClassName);
-        if (testId != null) {
-            sb.append("_").append(testId);
-        }
-        if (includeDate) {
-            sb.append("_");
-            SimpleDateFormat dateFormat = new SimpleDateFormat("YYYYMMddHHmmss");
-            String formattedDate = dateFormat.format(new Date());
-            sb.append(formattedDate);
-        }
-        return sb.toString();
-    }
-    
-    public static String getTestIdFromReference(ServiceReference<?> reference) {
+    public static String getTestIdFromReference(final ServiceReference<?> reference) {
         Object testIdProp = reference.getProperty(Constants.SERVICE_PROPERTY_TEST_ID);
-        if (testIdProp != null && testIdProp instanceof String) {
+        if ((testIdProp != null) && (testIdProp instanceof String)) {
             return (String) testIdProp;
         } else {
             return null;
         }
+    }
+
+    public static void writeTextResultToFile(final TestClassResult testClassResult, final String testId,
+            final File file, final boolean append) throws IOException {
+        boolean existed = file.exists();
+        FileOutputStream fout = new FileOutputStream(file, append);
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout, "UTF8"));
+        try {
+            ;
+            if (existed && append) {
+                bw.write("\n\n");
+            }
+            ResultUtil.dumpTextResult(testClassResult, testId, bw);
+        } finally {
+            if (bw != null) {
+                bw.close();
+            }
+        }
+
     }
 
     /**
@@ -283,8 +301,8 @@ public final class ResultUtil {
      * @param append
      *            Whether to append or rewrite the test results to the file.
      */
-    public static void writeXmlResultToFile(final TestClassResult testClassResult,
-            final File file, final String testId, final boolean append) {
+    public static void writeXmlResultToFile(final TestClassResult testClassResult, final File file,
+            final String testId, final boolean append) {
         file.getParentFile().mkdirs();
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
@@ -316,24 +334,6 @@ public final class ResultUtil {
         } catch (TransformerException e) {
             LOGGER.error("Error during dumping test results in XML format", e);
         }
-    }
-
-    public static void writeTextResultToFile(final TestClassResult testClassResult,
-            final String testId, final File file, boolean append) throws IOException {
-        boolean existed = file.exists();
-        FileOutputStream fout = new FileOutputStream(file, append);
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout, "UTF8"));
-        try {;
-            if (existed && append) {
-                bw.write("\n\n");
-            }
-            dumpTextResult(testClassResult, testId, bw);
-        } finally {
-            if (bw != null) {
-                bw.close();
-            }
-        }
-
     }
 
     /**

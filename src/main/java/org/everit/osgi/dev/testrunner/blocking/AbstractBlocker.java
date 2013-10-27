@@ -33,14 +33,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
  */
 public abstract class AbstractBlocker implements Blocker {
 
+    private boolean blocking = false;
+
     private List<BlockListener> blockListeners = new ArrayList<BlockListener>();
 
     private ReentrantReadWriteLock blockListenersRWLock = new ReentrantReadWriteLock(false);
-    
-    private boolean blocking = false;
 
     @Override
-    public void addBlockListener(BlockListener blockListener) {
+    public void addBlockListener(final BlockListener blockListener) {
         WriteLock writeLock = blockListenersRWLock.writeLock();
         writeLock.lock();
         blockListeners.add(blockListener);
@@ -50,19 +50,7 @@ public abstract class AbstractBlocker implements Blocker {
         writeLock.unlock();
     }
 
-    @Override
-    public void removeBlockListener(BlockListener blockListener) {
-        WriteLock writeLock = blockListenersRWLock.writeLock();
-        writeLock.lock();
-        blockListeners.remove(blockListener);
-        writeLock.unlock();
-    }
-
-    protected void notifyListenersAboutBlock() {
-        notifyListeners(true);
-    }
-    
-    protected void notifyListeners(boolean block) {
+    protected void notifyListeners(final boolean block) {
         ReadLock readLock = blockListenersRWLock.readLock();
         readLock.lock();
         blocking = block;
@@ -76,7 +64,19 @@ public abstract class AbstractBlocker implements Blocker {
         readLock.unlock();
     }
 
+    protected void notifyListenersAboutBlock() {
+        notifyListeners(true);
+    }
+
     protected void notifyListenersAboutUnblock() {
         notifyListeners(false);
+    }
+
+    @Override
+    public void removeBlockListener(final BlockListener blockListener) {
+        WriteLock writeLock = blockListenersRWLock.writeLock();
+        writeLock.lock();
+        blockListeners.remove(blockListener);
+        writeLock.unlock();
     }
 }

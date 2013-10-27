@@ -26,8 +26,6 @@ import java.util.List;
 
 public class TestClassResult {
 
-    private List<TestCaseResult> testCaseResults = new ArrayList<TestCaseResult>();
-
     /**
      * The name of the class that contained the test (in many cases this is an interface name).
      */
@@ -63,8 +61,11 @@ public class TestClassResult {
      */
     private final long startTime;
 
-    public TestClassResult(String className, long runCount, long errorCount, long failureCount, long ignoreCount,
-            long startTime, long finishTime, List<TestCaseResult> testCaseResults) {
+    private List<TestCaseResult> testCaseResults = new ArrayList<TestCaseResult>();
+
+    public TestClassResult(final String className, final long runCount, final long errorCount, final long failureCount,
+            final long ignoreCount, final long startTime, final long finishTime,
+            final List<TestCaseResult> testCaseResults) {
         this.className = className;
         this.runCount = runCount;
         this.errorCount = errorCount;
@@ -75,8 +76,8 @@ public class TestClassResult {
         this.testCaseResults = testCaseResults;
     }
 
-    public List<TestCaseResult> getTestCaseResults() {
-        return new ArrayList<TestCaseResult>(testCaseResults);
+    public String getClassName() {
+        return className;
     }
 
     public long getErrorCount() {
@@ -99,16 +100,16 @@ public class TestClassResult {
         return runCount;
     }
 
+    public long getRunTime() {
+        return finishTime - startTime;
+    }
+
     public long getStartTime() {
         return startTime;
     }
 
-    public long getRunTime() {
-        return finishTime - startTime;
-    }
-    
-    public String getClassName() {
-        return className;
+    public List<TestCaseResult> getTestCaseResults() {
+        return new ArrayList<TestCaseResult>(testCaseResults);
     }
 
     @Override
@@ -118,7 +119,5 @@ public class TestClassResult {
                 + ", finishTime=" + finishTime + ", testCaseResults=" + testCaseResults + ", running time="
                 + getRunTime() + "ms]";
     }
-    
-    
 
 }

@@ -41,33 +41,22 @@ public class TestManagerImpl implements TestManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestManagerImpl.class);
 
-    private Set<Filter> testInclusionFilters = new HashSet<Filter>();
-
-    private ReadWriteLock testInclusionRWLock = new ReentrantReadWriteLock(false);
-
     private Set<Filter> testExclusionFilters = new HashSet<Filter>();
 
     private ReadWriteLock testExclusionRWLock = new ReentrantReadWriteLock(false);
 
+    private Set<Filter> testInclusionFilters = new HashSet<Filter>();
+
+    private ReadWriteLock testInclusionRWLock = new ReentrantReadWriteLock(false);
+
     private final TestRunnerEngineTracker testRunnerEngineTracker;
 
-    public TestManagerImpl(TestRunnerEngineTracker testRunnerEngineTracker) {
+    public TestManagerImpl(final TestRunnerEngineTracker testRunnerEngineTracker) {
         this.testRunnerEngineTracker = testRunnerEngineTracker;
     }
 
     @Override
-    public boolean addTestInclusionFilter(Filter filter) {
-        Lock writeLock = testInclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return testInclusionFilters.add(filter);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    @Override
-    public boolean addTestExclusionFilter(Filter filter) {
+    public boolean addTestExclusionFilter(final Filter filter) {
         Lock writeLock = testExclusionRWLock.writeLock();
         writeLock.lock();
         try {
@@ -78,22 +67,11 @@ public class TestManagerImpl implements TestManager {
     }
 
     @Override
-    public boolean removeTestInclusionFilter(Filter filter) {
+    public boolean addTestInclusionFilter(final Filter filter) {
         Lock writeLock = testInclusionRWLock.writeLock();
         writeLock.lock();
         try {
-            return testInclusionFilters.remove(filter);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    @Override
-    public boolean removeTestExclusionFilter(Filter filter) {
-        Lock writeLock = testExclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return testExclusionFilters.remove(filter);
+            return testInclusionFilters.add(filter);
         } finally {
             writeLock.unlock();
         }
@@ -122,13 +100,35 @@ public class TestManagerImpl implements TestManager {
     }
 
     @Override
-    public List<TestClassResult> runTest(ServiceReference<Object> reference, boolean evenIfExcluded) {
+    public boolean removeTestExclusionFilter(final Filter filter) {
+        Lock writeLock = testExclusionRWLock.writeLock();
+        writeLock.lock();
+        try {
+            return testExclusionFilters.remove(filter);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean removeTestInclusionFilter(final Filter filter) {
+        Lock writeLock = testInclusionRWLock.writeLock();
+        writeLock.lock();
+        try {
+            return testInclusionFilters.remove(filter);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public List<TestClassResult> runTest(final ServiceReference<Object> reference, final boolean evenIfExcluded) {
         if (!evenIfExcluded && !shouldTestRun(reference)) {
             return null;
         }
 
         Object engineTypeObject = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
-        if (engineTypeObject == null || !(engineTypeObject instanceof String)) {
+        if ((engineTypeObject == null) || !(engineTypeObject instanceof String)) {
             LOGGER.warn("Unrecognized '" + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
                     + "' service property value for test. Are you sure the test engine is available? Ignoring: "
                     + reference.toString());
@@ -148,7 +148,7 @@ public class TestManagerImpl implements TestManager {
 
     }
 
-    private boolean shouldTestRun(ServiceReference<Object> reference) {
+    private boolean shouldTestRun(final ServiceReference<Object> reference) {
         Lock inclusionReadLock = testInclusionRWLock.readLock();
         inclusionReadLock.lock();
 

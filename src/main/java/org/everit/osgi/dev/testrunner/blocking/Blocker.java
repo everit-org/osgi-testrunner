@@ -21,13 +21,17 @@ package org.everit.osgi.dev.testrunner.blocking;
  * MA 02110-1301  USA
  */
 
-
 /**
  * A Blocker can hold the tests from running. Many technologies do a set up on a new thread (e.g. Blueprint). In this
  * case a blocker has to be written for the {@link BlockingManager} so that it will not start running the tests until
  * all the technologies finished processing.
  */
 public interface Blocker {
+
+    /**
+     * Adding a listener to the Blocker so it can notify the listener about blocking and unblocking.
+     */
+    void addBlockListener(BlockListener blockListener);
 
     /**
      * The {@link BlockingManager} calls this function periodically to be able to log out the causes of the blocked
@@ -38,11 +42,6 @@ public interface Blocker {
      *            with two spaces and write a line break onto the end of the message to have pretty output.
      */
     void logBlockCauses(StringBuilder sb);
-
-    /**
-     * Adding a listener to the Blocker so it can notify the listener about blocking and unblocking.
-     */
-    void addBlockListener(BlockListener blockListener);
 
     /**
      * Removing a blocking listener so it does not have to be notified anymore.

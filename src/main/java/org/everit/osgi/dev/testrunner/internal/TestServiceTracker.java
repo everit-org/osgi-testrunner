@@ -52,7 +52,8 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
         }
     }
 
-    public static TestServiceTracker createTestServiceTracker(BundleContext bundleContext, TestManager testManager) {
+    public static TestServiceTracker createTestServiceTracker(final BundleContext bundleContext,
+            final TestManager testManager) {
         try {
             Filter filter = bundleContext.createFilter("(" + Constants.SERVICE_PROPERTY_TEST_ID + "=*)");
             return new TestServiceTracker(bundleContext, testManager, filter);
@@ -64,13 +65,13 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
 
     private final TestManager testManager;
 
-    private TestServiceTracker(BundleContext bundleContext, TestManager testManager, Filter filter) {
+    private TestServiceTracker(final BundleContext bundleContext, final TestManager testManager, final Filter filter) {
         super(bundleContext, filter, null);
         this.testManager = testManager;
     }
 
     @Override
-    public Object addingService(ServiceReference<Object> reference) {
+    public Object addingService(final ServiceReference<Object> reference) {
         List<TestClassResult> testClassResults = testManager.runTest(reference, false);
         if (testClassResults != null) {
             dumpTestResults(reference, testClassResults);
@@ -81,7 +82,7 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
         return null;
     }
 
-    private void dumpTestResults(ServiceReference<Object> reference, List<TestClassResult> testClassResults) {
+    private void dumpTestResults(final ServiceReference<Object> reference, final List<TestClassResult> testClassResults) {
         String testId = ResultUtil.getTestIdFromReference(reference);
         for (TestClassResult testClassResult : testClassResults) {
             if (TEST_RESULT_FOLDER_FILE != null) {
@@ -111,11 +112,11 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
     }
 
     @Override
-    public void modifiedService(ServiceReference<Object> reference, Object service) {
+    public void modifiedService(final ServiceReference<Object> reference, final Object service) {
     }
 
     @Override
-    public void removedService(ServiceReference<Object> reference, Object service) {
+    public void removedService(final ServiceReference<Object> reference, final Object service) {
     }
 
 }

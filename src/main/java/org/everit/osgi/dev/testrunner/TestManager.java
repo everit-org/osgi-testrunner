@@ -42,17 +42,6 @@ import org.osgi.framework.ServiceReference;
 public interface TestManager {
 
     /**
-     * Adding a test inclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
-     * more information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was added, false if the filter was already in the list of filters so nothing happened.
-     */
-    boolean addTestInclusionFilter(Filter filter);
-
-    /**
      * Adding a test exclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
      * more information see the doc of the interface.
      * 
@@ -64,26 +53,15 @@ public interface TestManager {
     boolean addTestExclusionFilter(Filter filter);
 
     /**
-     * Removing a test inclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
+     * Adding a test inclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
      * more information see the doc of the interface.
      * 
      * @param filter
      *            The filter.
      * 
-     * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
+     * @return true if the filter was added, false if the filter was already in the list of filters so nothing happened.
      */
-    boolean removeTestInclusionFilter(Filter filter);
-
-    /**
-     * Removing a test exclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
-     * more information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
-     */
-    boolean removeTestExclusionFilter(Filter filter);
+    boolean addTestInclusionFilter(Filter filter);
 
     /**
      * Getting the exclusions that take effect during the deployment of the test bundles. For more information see the
@@ -102,6 +80,28 @@ public interface TestManager {
      *         to the TestManager.
      */
     Set<Filter> getTestInclusionFilters();
+
+    /**
+     * Removing a test exclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
+     * more information see the doc of the interface.
+     * 
+     * @param filter
+     *            The filter.
+     * 
+     * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
+     */
+    boolean removeTestExclusionFilter(Filter filter);
+
+    /**
+     * Removing a test inclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
+     * more information see the doc of the interface.
+     * 
+     * @param filter
+     *            The filter.
+     * 
+     * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
+     */
+    boolean removeTestInclusionFilter(Filter filter);
 
     /**
      * Runs all tests that are found based on the service reference.

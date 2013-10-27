@@ -38,7 +38,6 @@ import java.util.Map.Entry;
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
 import org.everit.osgi.dev.testrunner.blocking.Blocker;
-import org.everit.osgi.dev.testrunner.engine.TestEngine;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
 import org.everit.osgi.dev.testrunner.internal.blocking.FrameworkBlockerImpl;
 import org.osgi.framework.BundleActivator;
@@ -89,6 +88,50 @@ public class TestRunnerActivator implements BundleActivator {
                 }
             }
             return result;
+        }
+
+        private void logShutdownBlockingThreadsError(final List<Thread> blockingThreads) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            pw.println("THERE ARE NON-DEAMON THREADS THAT BLOCK STOPPING THE OSGi CONTAINER\n");
+            pw.println("Calling interrupt on blocking threads. "
+                    + "If the JVM does not stop after this well there is a serious problem in the code.");
+
+            for (Thread thread : blockingThreads) {
+                pw.println("[WARN] Thread [name=" + thread.getName() + ", id=" + thread.getId() + ", state="
+                        + thread.getState().name() + "]");
+                StackTraceElement[] stackTrace = thread.getStackTrace();
+                for (StackTraceElement stackTraceElement : stackTrace) {
+                    pw.println("\t" + stackTraceElement);
+                }
+                try {
+                    thread.interrupt();
+                } catch (SecurityException e) {
+                    pw.println("Error during interrupting the thread");
+                    logStackTrace(e, pw);
+                }
+            }
+            System.out.print(sw.toString());
+            File resultFolderFile = new File(resultFolder, Constants.SYSTEM_EXIT_ERROR_FILE_NAME);
+            FileOutputStream fout = null;
+            try {
+                fout = new FileOutputStream(resultFolderFile);
+                try {
+                    fout.write(sw.toString().getBytes(Charset.forName("UTF8")));
+                } catch (IOException e) {
+                    logStackTrace(e);
+                }
+            } catch (FileNotFoundException e1) {
+                logStackTrace(e1);
+            } finally {
+                try {
+                    if (fout != null) {
+                        fout.close();
+                    }
+                } catch (IOException e) {
+                    logStackTrace(e);
+                }
+            }
         }
 
         private void logStackTrace(final Exception e) {
@@ -147,50 +190,6 @@ public class TestRunnerActivator implements BundleActivator {
             System.exit(0);
         }
 
-        private void logShutdownBlockingThreadsError(final List<Thread> blockingThreads) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            pw.println("THERE ARE NON-DEAMON THREADS THAT BLOCK STOPPING THE OSGi CONTAINER\n");
-            pw.println("Calling interrupt on blocking threads. "
-                    + "If the JVM does not stop after this well there is a serious problem in the code.");
-
-            for (Thread thread : blockingThreads) {
-                pw.println("[WARN] Thread [name=" + thread.getName() + ", id=" + thread.getId() + ", state="
-                        + thread.getState().name() + "]");
-                StackTraceElement[] stackTrace = thread.getStackTrace();
-                for (StackTraceElement stackTraceElement : stackTrace) {
-                    pw.println("\t" + stackTraceElement);
-                }
-                try {
-                    thread.interrupt();
-                } catch (SecurityException e) {
-                    pw.println("Error during interrupting the thread");
-                    logStackTrace(e, pw);
-                }
-            }
-            System.out.print(sw.toString());
-            File resultFolderFile = new File(resultFolder, Constants.SYSTEM_EXIT_ERROR_FILE_NAME);
-            FileOutputStream fout = null;
-            try {
-                fout = new FileOutputStream(resultFolderFile);
-                try {
-                    fout.write(sw.toString().getBytes(Charset.forName("UTF8")));
-                } catch (IOException e) {
-                    logStackTrace(e);
-                }
-            } catch (FileNotFoundException e1) {
-                logStackTrace(e1);
-            } finally {
-                try {
-                    if (fout != null) {
-                        fout.close();
-                    }
-                } catch (IOException e) {
-                    logStackTrace(e);
-                }
-            }
-        }
-
         private void stopFramework() {
             Framework framework = (Framework) context.getBundle(0);
             LOGGER.info("Tests had been ran, stopping framework");
@@ -218,26 +217,26 @@ public class TestRunnerActivator implements BundleActivator {
      */
     private BlockingManagerImpl blockingManager;
 
-    private ServiceRegistration<TestManager> testManagerSR;
-
-    private ServiceRegistration<Blocker> frameworkBlockerSR;
-
     private FrameworkBlockerImpl frameworkBlocker;
 
-    private TestRunnerEngineServiceTracker testRunnerEngineServiceTracker;
-
-    private Thread waitingTestsToRunThread;
-
-    private volatile boolean startupTestsRan = false;
-
-    private Object startupTestRunningWaiter = new Object();
-
-    private TestServiceTracker testServiceTracker;
+    private ServiceRegistration<Blocker> frameworkBlockerSR;
 
     /**
      * The timeout while the test runner will wait for blocking threads before starting to interrupt them.
      */
     private int shutdownTimeout = Constants.DEFAULT_SHUTDOWN_TIMEOUT;
+
+    private Object startupTestRunningWaiter = new Object();
+
+    private volatile boolean startupTestsRan = false;
+
+    private ServiceRegistration<TestManager> testManagerSR;
+
+    private TestRunnerEngineServiceTracker testRunnerEngineServiceTracker;
+
+    private TestServiceTracker testServiceTracker;
+
+    private Thread waitingTestsToRunThread;
 
     @Override
     public void start(final BundleContext context) throws Exception {

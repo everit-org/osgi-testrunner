@@ -41,30 +41,30 @@ import org.slf4j.LoggerFactory;
 public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, TestEngine> implements
         TestRunnerEngineTracker {
 
-    public TestRunnerEngineServiceTracker(BundleContext bundleContext) {
-        super(bundleContext, TestEngine.class, null);
-        this.bundleContext = bundleContext;
-    }
-
     /**
      * Logger.
      */
     private static Logger LOGGER = LoggerFactory.getLogger(TestRunnerEngineServiceTracker.class);
 
-    private Map<String, List<TestEngine>> testRunnersByEngineType = new HashMap<String, List<TestEngine>>();
+    private BundleContext bundleContext;
 
     private ReentrantReadWriteLock mapRWLock = new ReentrantReadWriteLock(false);
 
-    private BundleContext bundleContext;
+    private Map<String, List<TestEngine>> testRunnersByEngineType = new HashMap<String, List<TestEngine>>();
 
-    public TestRunnerEngineServiceTracker(BundleContext context, ServiceReference<TestEngine> reference,
-            ServiceTrackerCustomizer<TestEngine, TestEngine> customizer, BundleContext bundleContext) {
+    public TestRunnerEngineServiceTracker(final BundleContext bundleContext) {
+        super(bundleContext, TestEngine.class, null);
+        this.bundleContext = bundleContext;
+    }
+
+    public TestRunnerEngineServiceTracker(final BundleContext context, final ServiceReference<TestEngine> reference,
+            final ServiceTrackerCustomizer<TestEngine, TestEngine> customizer, final BundleContext bundleContext) {
         super(context, reference, customizer);
         this.bundleContext = bundleContext;
     }
 
     @Override
-    public TestEngine addingService(ServiceReference<TestEngine> reference) {
+    public TestEngine addingService(final ServiceReference<TestEngine> reference) {
         Object engineType = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if (engineType == null) {
             LOGGER.warn("Registered test runner service did not have "
@@ -97,12 +97,26 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, T
     }
 
     @Override
-    public void modifiedService(ServiceReference<TestEngine> reference, TestEngine service) {
+    public TestEngine getEngineByType(final String testEngineType) {
+        ReadLock readLock = mapRWLock.readLock();
+        readLock.lock();
+        List<TestEngine> testRunners = testRunnersByEngineType.get(testEngineType);
+        readLock.unlock();
+        if (testRunners != null) {
+            return testRunners.get(0);
+        } else {
+            return null;
+        }
+
+    }
+
+    @Override
+    public void modifiedService(final ServiceReference<TestEngine> reference, final TestEngine service) {
         // Do nothing
     }
 
     @Override
-    public void removedService(ServiceReference<TestEngine> reference, TestEngine service) {
+    public void removedService(final ServiceReference<TestEngine> reference, final TestEngine service) {
         Object engineType = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         String testEngine = (String) engineType;
 
@@ -114,19 +128,5 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, T
             testRunnersByEngineType.remove(testEngine);
         }
         writeLock.unlock();
-    }
-
-    @Override
-    public TestEngine getEngineByType(String testEngineType) {
-        ReadLock readLock = mapRWLock.readLock();
-        readLock.lock();
-        List<TestEngine> testRunners = testRunnersByEngineType.get(testEngineType);
-        readLock.unlock();
-        if (testRunners != null) {
-            return testRunners.get(0);
-        } else {
-            return null;
-        }
-        
     }
 }

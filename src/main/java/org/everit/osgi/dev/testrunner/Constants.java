@@ -27,14 +27,21 @@ import java.util.Set;
 public final class Constants {
 
     /**
+     * The time in ms until the testrunner will wait for non-deamon threads stopping before exiting the vm when
+     * {@link #ENV_STOP_AFTER_TESTS} environment variable is set to "true".
+     */
+    public static final int DEFAULT_SHUTDOWN_TIMEOUT = 5000;
+
+    /**
      * Environment variable that indicates that the framework should be stopped after running the tests.
      */
     public static String ENV_STOP_AFTER_TESTS = "EOSGI_STOP_AFTER_TESTS";
 
     /**
-     * Required service property for test services and test engine services.
+     * The name of the Environment Variable that points to the folder where TEXT and XML based test results should be
+     * dumped.
      */
-    public static String SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE = "osgitest.testEngine";
+    public static final String ENV_TEST_RESULT_FOLDER = "EOSGI_TEST_RESULT_FOLDER";
 
     /**
      * Optional property for test services. The property must be available if multiple tests are registered as OSGi
@@ -43,16 +50,9 @@ public final class Constants {
     public static String SERVICE_PROPERTY_TEST_ID = "osgitest.testId";
 
     /**
-     * The time in ms until the testrunner will wait for non-deamon threads stopping before exiting the vm when
-     * {@link #ENV_STOP_AFTER_TESTS} environment variable is set to "true".
+     * Required service property for test services and test engine services.
      */
-    public static final int DEFAULT_SHUTDOWN_TIMEOUT = 5000;
-
-    /**
-     * The name of the Environment Variable that points to the folder where TEXT and XML based test results should be
-     * dumped.
-     */
-    public static final String ENV_TEST_RESULT_FOLDER = "EOSGI_TEST_RESULT_FOLDER";
+    public static String SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE = "osgitest.testEngine";
 
     /**
      * The name of the file that is written if there is an error during system exit.

@@ -42,13 +42,12 @@ public class FrameworkBlockerImpl extends AbstractBlocker {
      * The context of the testrunner bundle.
      */
     private final BundleContext bundleContext;
-    
+
     /**
-     * The framework listener that notifies the blocking listeners when the framework is started. 
+     * The framework listener that notifies the blocking listeners when the framework is started.
      */
     private FrameworkListener frameworkListener;
 
-    
     public FrameworkBlockerImpl(final BundleContext bundleContext) {
         this.bundleContext = bundleContext;
     }
@@ -62,18 +61,18 @@ public class FrameworkBlockerImpl extends AbstractBlocker {
 
     public void start() {
         frameworkListener = new FrameworkListener() {
-            
+
             @Override
-            public void frameworkEvent(FrameworkEvent event) {
+            public void frameworkEvent(final FrameworkEvent event) {
                 if (event.getType() == FrameworkEvent.STARTED) {
                     blocking = false;
                     notifyListenersAboutUnblock();
                 }
-                
+
             }
         };
         bundleContext.addFrameworkListener(frameworkListener);
-        
+
         Bundle frameworkBundle = bundleContext.getBundle(0);
         if (frameworkBundle.getState() != Bundle.ACTIVE) {
             blocking = true;

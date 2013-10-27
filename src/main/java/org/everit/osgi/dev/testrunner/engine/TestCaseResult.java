@@ -23,14 +23,14 @@ package org.everit.osgi.dev.testrunner.engine;
 
 public class TestCaseResult {
 
-    private final String methodName;
-
     private final Throwable failure;
 
     /**
      * The time the TestCase stopped to run.
      */
     private final Long finishTime;
+
+    private final String methodName;
 
     /**
      * The starting time of the TestCase.
@@ -43,7 +43,7 @@ public class TestCaseResult {
      * @param startTime
      *            The time when the TestCase was started.
      */
-    public TestCaseResult(String methodName, final Long startTime, final Long finishTime, Throwable failure) {
+    public TestCaseResult(final String methodName, final Long startTime, final Long finishTime, final Throwable failure) {
         this.methodName = methodName;
         this.startTime = startTime;
         this.finishTime = finishTime;
@@ -56,6 +56,10 @@ public class TestCaseResult {
 
     public Long getFinishTime() {
         return finishTime;
+    }
+
+    public String getMethodName() {
+        return methodName;
     }
 
     /**
@@ -75,15 +79,10 @@ public class TestCaseResult {
         return startTime;
     }
 
-    public String getMethodName() {
-        return methodName;
-    }
-
     @Override
     public String toString() {
         return "TestCaseResult [methodName=" + methodName + ", startTime=" + startTime + ", finishTime=" + finishTime
                 + ", failure=" + failure + ", running time=" + getRunningTime() + "ms]";
     }
-    
-    
+
 }

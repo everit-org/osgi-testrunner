@@ -1,6 +1,5 @@
 package org.everit.osgi.dev.testrunner.blocking;
 
-
 /*
  * Copyright (c) 2011, Everit Kft.
  *

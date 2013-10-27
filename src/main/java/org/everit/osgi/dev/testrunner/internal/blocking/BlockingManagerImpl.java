@@ -51,9 +51,14 @@ public final class BlockingManagerImpl {
         private Map<Blocker, BlockListener> listenersByBlockers = new ConcurrentHashMap<Blocker, BlockListener>();
 
         @Override
-        public Blocker addingService(ServiceReference<Blocker> reference) {
+        public Blocker addingService(final ServiceReference<Blocker> reference) {
             final Blocker blocker = bundleContext.getService(reference);
             BlockListener blockListener = new BlockListener() {
+
+                @Override
+                public void block() {
+                    activeBlockers.put(blocker, true);
+                }
 
                 @Override
                 public void unblock() {
@@ -64,11 +69,6 @@ public final class BlockingManagerImpl {
                         }
                     }
                 }
-
-                @Override
-                public void block() {
-                    activeBlockers.put(blocker, true);
-                }
             };
             listenersByBlockers.put(blocker, blockListener);
 
@@ -77,11 +77,11 @@ public final class BlockingManagerImpl {
         }
 
         @Override
-        public void modifiedService(ServiceReference<Blocker> reference, Blocker service) {
+        public void modifiedService(final ServiceReference<Blocker> reference, final Blocker service) {
         }
 
         @Override
-        public void removedService(ServiceReference<Blocker> reference, Blocker blocker) {
+        public void removedService(final ServiceReference<Blocker> reference, final Blocker blocker) {
             BlockListener blockListener = listenersByBlockers.remove(blocker);
             if (blockListener != null) {
                 blocker.removeBlockListener(blockListener);
@@ -117,6 +117,8 @@ public final class BlockingManagerImpl {
      */
     private Map<Blocker, Boolean> activeBlockers = new ConcurrentHashMap<Blocker, Boolean>();
 
+    private ServiceTracker<Blocker, Blocker> blockerTracker;
+
     /**
      * The thread that starts waits for all block causes and starts the tests when there is no more cause. This has to
      * be on a new thread as otherwise the whole framework starting would be blocked and there would be a deadlock. This
@@ -125,16 +127,14 @@ public final class BlockingManagerImpl {
     private Thread blockingManagerThread;
 
     /**
-     * A flag that indicates whether this manager is stopped or not.
-     */
-    private AtomicBoolean stopped = new AtomicBoolean(true);
-
-    /**
      * The context of the current bundle.
      */
     private BundleContext bundleContext;
 
-    private ServiceTracker<Blocker, Blocker> blockerTracker;
+    /**
+     * A flag that indicates whether this manager is stopped or not.
+     */
+    private AtomicBoolean stopped = new AtomicBoolean(true);
 
     /**
      * Helper object to be able to wait until framework is launched and all blueprint bundles are either started or
@@ -238,11 +238,11 @@ public final class BlockingManagerImpl {
 
     }
 
-    public boolean waitForTestsToStart(long timeout) {
+    public boolean waitForTestsToStart(final long timeout) {
         synchronized (testRunningWaiter) {
             try {
-                if (!stopped.get() && activeBlockers.size() > 0) {
-                    
+                if (!stopped.get() && (activeBlockers.size() > 0)) {
+
                     testRunningWaiter.wait(timeout);
                 }
                 if ((activeBlockers.size() > 0) && !stopped.get()) {
