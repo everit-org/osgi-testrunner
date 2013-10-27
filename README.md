@@ -10,8 +10,16 @@ The test runner bundle picks up tests and runs them.
 Running OSGi tests
 ------------------
 
-The module picks up every OSGi service that has the service property
-**osgitest=junit4**. In case such a service is found it is passed to JUnit.
+The module picks up every OSGi service that has the following service
+properties defined:
+
+ - **osgitest.testId**: This property should have a value that can be a
+   part of a file name. 
+
+ - **osgitest.testEngine**: This property defines which test engine the
+   test should be passed to. Currently there is a **junit4** implemented
+   in the osgi-testrunner-junit4 project.
+   
 Annotations should be placed into the interface the OSGi service implements.
 
 The bundle does not start looking for services until there is any blocking
@@ -19,11 +27,13 @@ cause. Blocking causes can be:
 
   - Framework is not started yet (Framework bundle is not in ACTIVE state)
 
-  - A BlueprintContainer is starting
-
-  - In later versions it will be possible to write custom blocking causes
-    like the one that checks if there is any BlueprintContainer starting up
-    on a separate thread.
+  - Custom blocking causes: It is possible to write custom Blockers and
+    register them as OSGi service. In case they are registered, they will
+    be picked up and the tests will not run after a system startup until
+    all blockers allow it. Currently a blocker for Blueprint technology
+    is implemented in the osgi-testrunner-blueprint project that forces
+    the tests to wait until all Blueprintcontainers get to the ACTIVE or
+    FAILED state.
 
 
 Ordinary JUnit tests vs. testrunner bundle
