@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.internal.junit4;
+package org.everit.osgi.dev.testrunner.internal;
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -21,11 +21,16 @@ package org.everit.osgi.dev.testrunner.internal.junit4;
  * MA 02110-1301  USA
  */
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -42,7 +47,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.junit.runner.notification.Failure;
+import org.everit.osgi.dev.testrunner.Constants;
+import org.everit.osgi.dev.testrunner.engine.TestCaseResult;
+import org.everit.osgi.dev.testrunner.engine.TestClassResult;
+import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -53,12 +61,12 @@ import org.xml.sax.SAXException;
 /**
  * Util class to help dumping test results into files or streams.
  */
-public final class JunitResultUtil {
+public final class ResultUtil {
 
     /**
      * The logger of the class.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(JunitResultUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResultUtil.class);
 
     /**
      * The number that should be used to get the seconds from a millisec based value during a diviation.
@@ -102,41 +110,38 @@ public final class JunitResultUtil {
     /**
      * Dumping test results in text format.
      * 
-     * @param testId Id of the test.
-     * @param testClazz
-     *            The class or interface that these test results belong to.
-     * @param extendedResult
+     * @param testId
+     *            Id of the test.
+     * 
+     * @param testClassResult
      *            The results of the test.
      * @param writer
      *            The writer the test results will be written to.
      * @throws IOException
      *             if the writer does not work well.
      */
-    public static void dumpTextResult(final Class<?> testClazz, final ExtendedResult extendedResult,
-            final String testId,
-            final Writer writer) throws IOException {
+    public static void dumpTextResult(final TestClassResult testClassResult, final String testId, final Writer writer)
+            throws IOException {
         writer.write("-------------------------------------------------------------------------------\n");
-        writer.write("Test set: " + testClazz.getName() + (testId != null ? " (" + testId + ")" : "") + "\n");
+        writer.write("Test set: " + testClassResult.getClassName() + (testId != null ? " (" + testId + ")" : "") + "\n");
         writer.write("-------------------------------------------------------------------------------\n");
-        writer.write("Tests run: " + extendedResult.getRunCount() + ", Failures: "
-                + extendedResult.getFailureCount() + ", Errors: "
-                + extendedResult.getErrorCount() + ", Skipped: "
-                + extendedResult.getIgnoreCount() + ", Time elapsed: "
-                + JunitResultUtil.convertTimeToString(extendedResult.getRunTime()) + " sec");
-        if (extendedResult.getFailureCount() > 0) {
+        writer.write("Tests run: " + testClassResult.getRunCount() + ", Failures: " + testClassResult.getFailureCount()
+                + ", Errors: " + testClassResult.getErrorCount() + ", Skipped: " + testClassResult.getIgnoreCount()
+                + ", Time elapsed: " + ResultUtil.convertTimeToString(testClassResult.getRunTime()) + " sec");
+        if (testClassResult.getFailureCount() > 0) {
             writer.write(" <<< FAILURE!");
         }
         writer.write("\n");
 
         PrintWriter pw = new PrintWriter(writer);
-        for (TestCaseResult testCaseResult : extendedResult.getTestCaseResults()) {
+        for (TestCaseResult testCaseResult : testClassResult.getTestCaseResults()) {
             if (testCaseResult.getFailure() != null) {
-                Failure failure = testCaseResult.getFailure();
-                writer.write(failure.getDescription() + "  Time elapsed: "
-                        + JunitResultUtil.convertTimeToString(testCaseResult.getRunningTime()) + " sec  <<< "
-                        + ((failure.getException() instanceof AssertionError) ? "FAILURE" : "ERROR") + "!" + "\n");
+                Throwable failure = testCaseResult.getFailure();
+                writer.write(testCaseResult.getMethodName() + "  Time elapsed: "
+                        + ResultUtil.convertTimeToString(testCaseResult.getRunningTime()) + " sec  <<< "
+                        + ((failure instanceof AssertionError) ? "FAILURE" : "ERROR") + "!" + "\n");
 
-                failure.getException().printStackTrace(pw);
+                failure.printStackTrace(pw);
             }
         }
     }
@@ -144,20 +149,18 @@ public final class JunitResultUtil {
     /**
      * Dumping test results in XML format.
      * 
-     * @param testId Id of the test.
-     * @param testClazz
-     *            The class or interface that these test results belong to.
-     * @param extendedResult
+     * @param testId
+     *            Id of the test.
+     * @param testClassResult
      *            The results of the test.
      * @param writer
      *            The writer the test results will be written to.
      */
-    public static void dumpXmlResult(final Class<?> testClazz, final ExtendedResult extendedResult,
-            final String testId,
-            final Writer writer) {
+    public static void dumpXmlResult(final TestClassResult testClassResult,
+            final String testId, final Writer writer) {
 
         try {
-            Node testSuiteElement = JunitResultUtil.generateTestSuiteNode(testClazz, extendedResult);
+            Node testSuiteElement = ResultUtil.generateTestSuiteNode(testClassResult);
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer transformer = tf.newTransformer();
             Source source = new DOMSource(testSuiteElement);
@@ -176,13 +179,11 @@ public final class JunitResultUtil {
     /**
      * Generating a testSuite XML node from a test result.
      * 
-     * @param testClazz
-     *            The class or interface the test belongs to.
-     * @param extendedResult
+     * @param testClassResult
      *            The result of the test.
      * @return An XML node representing the testSuite.
      */
-    public static Node generateTestSuiteNode(final Class<?> testClazz, final ExtendedResult extendedResult) {
+    public static Node generateTestSuiteNode(final TestClassResult testClassResult) {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -190,12 +191,12 @@ public final class JunitResultUtil {
             Element testSuiteElement = document.createElement("testsuite");
             document.appendChild(testSuiteElement);
 
-            testSuiteElement.setAttribute("failures", String.valueOf(extendedResult.getFailureCount()));
-            testSuiteElement.setAttribute("time", JunitResultUtil.convertTimeToString(extendedResult.getRunTime()));
-            testSuiteElement.setAttribute("errors", String.valueOf(extendedResult.getErrorCount()));
-            testSuiteElement.setAttribute("skipped", String.valueOf(extendedResult.getIgnoreCount()));
-            testSuiteElement.setAttribute("tests", String.valueOf(extendedResult.getRunCount()));
-            testSuiteElement.setAttribute("name", testClazz.getName());
+            testSuiteElement.setAttribute("failures", String.valueOf(testClassResult.getFailureCount()));
+            testSuiteElement.setAttribute("time", ResultUtil.convertTimeToString(testClassResult.getRunTime()));
+            testSuiteElement.setAttribute("errors", String.valueOf(testClassResult.getErrorCount()));
+            testSuiteElement.setAttribute("skipped", String.valueOf(testClassResult.getIgnoreCount()));
+            testSuiteElement.setAttribute("tests", String.valueOf(testClassResult.getRunCount()));
+            testSuiteElement.setAttribute("name", testClassResult.getClassName());
 
             Element propertiesElement = document.createElement("properties");
             testSuiteElement.appendChild(propertiesElement);
@@ -206,36 +207,33 @@ public final class JunitResultUtil {
                 propertyElement.setAttribute("name", String.valueOf(propertyEntry.getKey()));
                 propertyElement.setAttribute("value", String.valueOf(propertyEntry.getValue()));
             }
-            List<TestCaseResult> testCaseResults = extendedResult.getTestCaseResults();
+            List<TestCaseResult> testCaseResults = testClassResult.getTestCaseResults();
             for (TestCaseResult testCaseResult : testCaseResults) {
                 if (testCaseResult.getFinishTime() != null) {
                     Element testCaseElement = document.createElement("testcase");
                     testSuiteElement.appendChild(testCaseElement);
                     testCaseElement.setAttribute("time",
-                            JunitResultUtil.convertTimeToString(testCaseResult.getRunningTime()));
-                    testCaseElement.setAttribute("classname", testCaseResult.getDescription().getClassName());
-                    testCaseElement.setAttribute("name", testCaseResult.getDescription().getMethodName());
+                            ResultUtil.convertTimeToString(testCaseResult.getRunningTime()));
+                    testCaseElement.setAttribute("classname", testClassResult.getClassName());
+                    testCaseElement.setAttribute("name", testCaseResult.getMethodName());
                     if (testCaseResult.getFailure() != null) {
-                        Failure failure = testCaseResult.getFailure();
+                        Throwable failure = testCaseResult.getFailure();
                         Element errorElement = null;
-                        if (failure.getException() instanceof AssertionError) {
+                        if (failure instanceof AssertionError) {
                             errorElement = document.createElement("failure");
                         } else {
                             errorElement = document.createElement("error");
                         }
                         testCaseElement.appendChild(errorElement);
-                        if (failure.getMessage() != null) {
+                        if (failure != null) {
                             errorElement.setAttribute("message", failure.getMessage());
-                        } else {
-                            errorElement.setAttribute("message", failure.getException().getClass() + ":");
                         }
 
-                        if (failure.getException() != null) {
-                            Throwable throwable = failure.getException();
-                            errorElement.setAttribute("type", throwable.getClass().getName());
+                        if (failure != null) {
+                            errorElement.setAttribute("type", failure.getClass().getName());
                             StringWriter sw = new StringWriter();
                             PrintWriter pw = new PrintWriter(sw);
-                            throwable.printStackTrace(pw);
+                            failure.printStackTrace(pw);
                             errorElement.setTextContent(sw.toString());
                         }
                     }
@@ -248,21 +246,44 @@ public final class JunitResultUtil {
         return null;
     }
 
+    public static String generateFileNameWithoutExtension(String testClassName,
+            String testId, boolean includeDate) {
+        StringBuilder sb = new StringBuilder(testClassName);
+        if (testId != null) {
+            sb.append("_").append(testId);
+        }
+        if (includeDate) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("YYYYMMddHHmmss");
+            String formattedDate = dateFormat.format(new Date());
+            sb.append(formattedDate);
+        }
+        return sb.toString();
+    }
+    
+    public static String getTestIdFromReference(ServiceReference<?> reference) {
+        Object testIdProp = reference.getProperty(Constants.SERVICE_PROPERTY_TEST_ID);
+        if (testIdProp != null && testIdProp instanceof String) {
+            return (String) testIdProp;
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Writing the test result in XML format to a file.
      * 
-     * @param testId Id of the test.
-     * @param testClazz
-     *            The class or interface the test belongs to.
-     * @param extendedResult
+     * @param testId
+     *            Id of the test.
+     * @param testClassResult
      *            The result of test.
      * @param file
      *            The file where test results should be written.
      * @param append
      *            Whether to append or rewrite the test results to the file.
      */
-    public static void writeXmlResultToFile(final Class<?> testClazz, final ExtendedResult extendedResult,
+    public static void writeXmlResultToFile(final TestClassResult testClassResult,
             final File file, final String testId, final boolean append) {
+        file.getParentFile().mkdirs();
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -272,7 +293,7 @@ public final class JunitResultUtil {
             } else {
                 document = db.newDocument();
             }
-            Node node = document.adoptNode(JunitResultUtil.generateTestSuiteNode(testClazz, extendedResult));
+            Node node = document.adoptNode(ResultUtil.generateTestSuiteNode(testClassResult));
             document.appendChild(node);
 
             TransformerFactory tf = TransformerFactory.newInstance();
@@ -295,9 +316,27 @@ public final class JunitResultUtil {
         }
     }
 
+    public static void writeTextResultToFile(final TestClassResult testClassResult,
+            final String testId, final File file, boolean append) throws IOException {
+        boolean existed = file.exists();
+        FileOutputStream fout = new FileOutputStream(file, append);
+        try {
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout, "UTF8"));
+            if (existed && append) {
+                bw.write("\n\n");
+                dumpTextResult(testClassResult, testId, bw);
+            }
+        } finally {
+            if (fout != null) {
+                fout.close();
+            }
+        }
+
+    }
+
     /**
      * Private constructor for Util class.
      */
-    private JunitResultUtil() {
+    private ResultUtil() {
     }
 }

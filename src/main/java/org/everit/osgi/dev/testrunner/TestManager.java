@@ -21,9 +21,12 @@ package org.everit.osgi.dev.testrunner;
  * MA 02110-1301  USA
  */
 
+import java.util.List;
 import java.util.Set;
 
+import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.osgi.framework.Filter;
+import org.osgi.framework.ServiceReference;
 
 /**
  * Via the TestManager OSGi service 3rd party tools can specify which tests should run after a bundle deployment. The
@@ -39,66 +42,6 @@ import org.osgi.framework.Filter;
 public interface TestManager {
 
     /**
-     * Adding a test inclusion as an OSGi filter that will take effect during the startup of the system. For more
-     * information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was added, false if the filter was already in the list of filters so nothing happened.
-     */
-    boolean addStartupTestInclusionFilter(Filter filter);
-
-    /**
-     * Adding a test exclusion as an OSGi filter that will take effect during the startup of the system. For more
-     * information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was added, false if the filter was already in the list of filters so nothing happened.
-     */
-    boolean addStartupTestExclusionFilter(Filter filter);
-
-    /**
-     * Removing a test inclusion as an OSGi filter that will take effect during the startup of the system. For more
-     * information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
-     */
-    boolean removeStartupTestInclusion(Filter filter);
-
-    /**
-     * Removing a test exclusion as an OSGi filter that will take effect during the startup of the system. For more
-     * information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
-     */
-    boolean removeStartupTestExclusionFilter(Filter filter);
-
-    /**
-     * Getting the exclusions that take effect during the startup.
-     * 
-     * @return The set of filters. The set is unordered and modifying the element list of the set will not take effect
-     *         to the TestManager.
-     */
-    Set<Filter> getStartupTestExclusionFilters();
-
-    /**
-     * Getting the inclusions that take effect during the startup.
-     * 
-     * @return The set of filters. The set is unordered and modifying the element list of the set will not take effect
-     *         to the TestManager.
-     */
-    Set<Filter> getStartupTestInclusionFilters();
-
-    /**
      * Adding a test inclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
      * more information see the doc of the interface.
      * 
@@ -107,7 +50,7 @@ public interface TestManager {
      * 
      * @return true if the filter was added, false if the filter was already in the list of filters so nothing happened.
      */
-    boolean addDeployedTestInclusionFilter(Filter filter);
+    boolean addTestInclusionFilter(Filter filter);
 
     /**
      * Adding a test exclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
@@ -118,7 +61,7 @@ public interface TestManager {
      * 
      * @return true if the filter was added, false if the filter was already in the list of filters so nothing happened.
      */
-    boolean addDeployedTestExclusionFilter(Filter filter);
+    boolean addTestExclusionFilter(Filter filter);
 
     /**
      * Removing a test inclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
@@ -129,7 +72,7 @@ public interface TestManager {
      * 
      * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
      */
-    boolean removeDeployedTestInclusionFilter(Filter filter);
+    boolean removeTestInclusionFilter(Filter filter);
 
     /**
      * Removing a test exclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
@@ -140,7 +83,7 @@ public interface TestManager {
      * 
      * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
      */
-    boolean removeDeployedTestExclusionFilter(Filter filter);
+    boolean removeTestExclusionFilter(Filter filter);
 
     /**
      * Getting the exclusions that take effect during the deployment of the test bundles. For more information see the
@@ -149,7 +92,7 @@ public interface TestManager {
      * @return The set of filters. The set is unordered and modifying the element list of the set will not take effect
      *         to the TestManager.
      */
-    Set<Filter> getDeployedTestExclusionFilters();
+    Set<Filter> getTestExclusionFilters();
 
     /**
      * Getting the inclusions that take effect during the deployment of the test bundles. For more information see the
@@ -158,6 +101,18 @@ public interface TestManager {
      * @return The set of filters. The set is unordered and modifying the element list of the set will not take effect
      *         to the TestManager.
      */
-    Set<Filter> getDeployedTestInclusionFilters();
+    Set<Filter> getTestInclusionFilters();
 
+    /**
+     * Runs all tests that are found based on the service reference.
+     * 
+     * @param reference
+     *            The service reference that points to test objects.
+     * 
+     * @param evenIfExcluded
+     *            if true, the tests will run even if they are excluded based on the filter settings.
+     * 
+     * @return The test results.
+     */
+    List<TestClassResult> runTest(ServiceReference<Object> reference, boolean evenIfExcluded);
 }

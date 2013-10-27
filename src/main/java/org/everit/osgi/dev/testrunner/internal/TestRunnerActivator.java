@@ -30,18 +30,20 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
-import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManager;
+import org.everit.osgi.dev.testrunner.Constants;
+import org.everit.osgi.dev.testrunner.TestManager;
+import org.everit.osgi.dev.testrunner.engine.TestRunnerEngine;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
 import org.everit.osgi.dev.testrunner.internal.junit4.Junit4TestRunner;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.launch.Framework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +83,7 @@ public class TestRunnerActivator implements BundleActivator {
                 Thread thread = threadAndStackTrace.getKey();
                 if (!thread.isDaemon() && !Thread.State.TERMINATED.equals(thread.getState())
                         && !thread.equals(Thread.currentThread())
-                        && !SYSTEM_NON_DAEMON_THREAD_NAMES.contains(thread.getName())) {
+                        && !Constants.SYSTEM_NON_DAEMON_THREAD_NAMES.contains(thread.getName())) {
                     result.add(thread);
                 }
             }
@@ -102,8 +104,7 @@ public class TestRunnerActivator implements BundleActivator {
 
         @Override
         public void run() {
-            blockingManager.start(context);
-            blockingManager.waitForTestResultsAfterStartup();
+            // TODO
 
             stopFramework();
 
@@ -142,9 +143,8 @@ public class TestRunnerActivator implements BundleActivator {
                     + "If the JVM does not stop after this well there is a serious problem in the code.");
 
             for (Thread thread : blockingThreads) {
-                pw.println("[WARN] Thread [name="
-                        + thread.getName()
-                        + ", id=" + thread.getId() + ", state=" + thread.getState().name() + "]");
+                pw.println("[WARN] Thread [name=" + thread.getName() + ", id=" + thread.getId() + ", state="
+                        + thread.getState().name() + "]");
                 StackTraceElement[] stackTrace = thread.getStackTrace();
                 for (StackTraceElement stackTraceElement : stackTrace) {
                     pw.println("\t" + stackTraceElement);
@@ -157,7 +157,7 @@ public class TestRunnerActivator implements BundleActivator {
                 }
             }
             System.out.print(sw.toString());
-            File resultFolderFile = new File(resultFolder, SYSTEM_EXIT_ERROR_FILE_NAME);
+            File resultFolderFile = new File(resultFolder, Constants.SYSTEM_EXIT_ERROR_FILE_NAME);
             FileOutputStream fout = null;
             try {
                 fout = new FileOutputStream(resultFolderFile);
@@ -194,76 +194,86 @@ public class TestRunnerActivator implements BundleActivator {
     }
 
     /**
-     * The time in ms until the testrunner will wait for non-deamon threads stopping before exiting the vm.
-     */
-    public static final int DEFAULT_SHUTDOWN_TIMEOUT = 5000;
-
-    /**
-     * The name of the Environment Variable that points to the folder where TEXT and XML based test results should be
-     * dumped. If this variable is specified the System properties of dump folders are ignored.
-     */
-    public static final String ENV_TEST_RESULT_FOLDER = "EOSGI_TEST_RESULT_FOLDER";
-
-    /**
      * Logger of class.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(TestRunnerActivator.class);
-
-    /**
-     * The name of the file that is written if there is an error during system exit.
-     */
-    public static final String SYSTEM_EXIT_ERROR_FILE_NAME = "system-exit-error.txt";
-
-    /**
-     * The name of non-daemon threads that are started by the system. These threads do not have to be interrupted before
-     * a system exit.
-     */
-    public static final Set<String> SYSTEM_NON_DAEMON_THREAD_NAMES;
-
-    static {
-        SYSTEM_NON_DAEMON_THREAD_NAMES = new HashSet<String>();
-        SYSTEM_NON_DAEMON_THREAD_NAMES.add("DestroyJavaVM");
-    }
 
     /**
      * The blocking manager instance that is registered as a framework listener, a blueprint listener and as a service.
      */
     private BlockingManagerImpl blockingManager;
 
+    private ServiceRegistration<TestRunnerEngine> junit4TestRunnerSR;
+
+    private ServiceRegistration<TestManager> testManagerSR;
+
+    private TestRunnerEngineServiceTracker testRunnerEngineServiceTracker;
+
+    private Thread waitingTestsToRunThread;
+
+    private Object startupTestRunningWaiter = new Object();
+
+    private TestServiceTracker testServiceTracker;
 
     /**
      * The timeout while the test runner will wait for blocking threads before starting to interrupt them.
      */
-    private int shutdownTimeout = DEFAULT_SHUTDOWN_TIMEOUT;
+    private int shutdownTimeout = Constants.DEFAULT_SHUTDOWN_TIMEOUT;
 
     @Override
     public void start(final BundleContext context) throws Exception {
 
-        String resultDumpFolder = System.getenv(ENV_TEST_RESULT_FOLDER);
+        String resultDumpFolder = System.getenv(Constants.ENV_TEST_RESULT_FOLDER);
 
         blockingManager = new BlockingManagerImpl(context);
+        blockingManager.start();
 
-        Junit4TestRunner junit4TestRunner = new Junit4TestRunner(resultDumpFolder, resultDumpFolder, context);
-        blockingManager.addTestRunner(junit4TestRunner);
+        Junit4TestRunner junit4TestRunner = new Junit4TestRunner(context);
+        Hashtable<String, Object> junit4RunnerProps = new Hashtable<String, Object>();
+        junit4RunnerProps.put(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE, "junit4");
+        junit4TestRunnerSR = context.registerService(TestRunnerEngine.class, junit4TestRunner, junit4RunnerProps);
 
-        String stopAfterTests = System.getenv(BlockingManager.ENV_STOP_AFTER_TESTS);
+        testRunnerEngineServiceTracker = new TestRunnerEngineServiceTracker(context);
+        testRunnerEngineServiceTracker.open();
+
+       final TestManagerImpl testManager = new TestManagerImpl(testRunnerEngineServiceTracker);
+        testManagerSR = context.registerService(TestManager.class, testManager, new Hashtable<String, Object>());
+
+        waitingTestsToRunThread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean testsCanBeStarted = blockingManager.waitForTestsToStart(0);
+                if (testsCanBeStarted) {
+                    testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager);
+                    startupTestRunningWaiter.notifyAll();
+                }
+            }
+        });
+
+        String stopAfterTests = System.getenv(Constants.ENV_STOP_AFTER_TESTS);
         if (Boolean.parseBoolean(stopAfterTests)) {
             new TestFinalizationWaitingShutdownThread(context, resultDumpFolder).start();
-        } else {
-            new Thread(new Runnable() {
-
-                @Override
-                public void run() {
-                    blockingManager.start(context);
-                }
-            }).start();
         }
     }
 
     @Override
     public void stop(final BundleContext context) throws Exception {
+        if (testServiceTracker != null) {
+            testServiceTracker.close();
+        }
+        if (junit4TestRunnerSR != null) {
+            junit4TestRunnerSR.unregister();
+        }
+        if (testManagerSR != null) {
+            testManagerSR.unregister();
+        }
+        if (testRunnerEngineServiceTracker != null) {
+            testRunnerEngineServiceTracker.close();
+        }
         if (blockingManager != null) {
             blockingManager.stop();
         }
+        waitingTestsToRunThread.interrupt();
     }
 }

@@ -43,7 +43,7 @@ public class ExtendedResultListener extends RunListener {
     /**
      * The result of each test cases by their {@link Description}s.
      */
-    private Map<Description, TestCaseResult> testCaseResults = new ConcurrentHashMap<Description, TestCaseResult>();
+    private Map<Description, FlowTestCaseResult> testCaseResults = new ConcurrentHashMap<Description, FlowTestCaseResult>();
 
     public ExtendedResult getResult() {
         return result;
@@ -56,9 +56,9 @@ public class ExtendedResultListener extends RunListener {
      *            The failure object.
      */
     protected void handleFailure(final Failure failure) {
-        TestCaseResult testCaseResult = testCaseResults.get(failure.getDescription());
+        FlowTestCaseResult testCaseResult = testCaseResults.get(failure.getDescription());
         testCaseResult.finishRun();
-        testCaseResult.setFailure(failure);
+        testCaseResult.setFailure(failure.getException());
         Throwable exception = failure.getException();
         if (exception instanceof AssertionError) {
             result.incrementFailureCount();
@@ -79,13 +79,14 @@ public class ExtendedResultListener extends RunListener {
 
     @Override
     public void testFinished(final Description description) throws Exception {
-        TestCaseResult testCaseResult = testCaseResults.get(description);
+        FlowTestCaseResult testCaseResult = testCaseResults.get(description);
         testCaseResult.finishRun();
     }
 
     @Override
     public void testIgnored(final Description description) throws Exception {
-        TestCaseResult testCaseResult = new TestCaseResult(description, null);
+        FlowTestCaseResult testCaseResult =
+                new FlowTestCaseResult(description.getClassName(), description.getMethodName(), null);
         testCaseResults.put(description, testCaseResult);
         result.incrementIgnoreCount();
     }
@@ -102,7 +103,8 @@ public class ExtendedResultListener extends RunListener {
 
     @Override
     public void testStarted(final Description description) throws Exception {
-        TestCaseResult testCaseResult = new TestCaseResult(description, new Date().getTime());
+        FlowTestCaseResult testCaseResult =
+                new FlowTestCaseResult(description.getClassName(), description.getMethodName(), new Date().getTime());
         testCaseResults.put(description, testCaseResult);
         result.getTestCaseResults().add(testCaseResult);
         result.incrementRunCount();

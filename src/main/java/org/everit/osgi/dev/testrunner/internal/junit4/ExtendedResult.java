@@ -64,7 +64,7 @@ public class ExtendedResult {
     /**
      * The results of TestCases that ran.
      */
-    private List<TestCaseResult> testCaseResults = new ArrayList<TestCaseResult>();
+    private List<FlowTestCaseResult> testCaseResults = new ArrayList<FlowTestCaseResult>();
 
     /**
      * Constructor of the class.
@@ -103,6 +103,10 @@ public class ExtendedResult {
         return runCount;
     }
 
+    public long getStartTime() {
+        return startTime;
+    }
+
     /**
      * Getting the amount of time the tests were running.
      * 
@@ -116,7 +120,7 @@ public class ExtendedResult {
         }
     }
 
-    public List<TestCaseResult> getTestCaseResults() {
+    public List<FlowTestCaseResult> getTestCaseResults() {
         return testCaseResults;
     }
 

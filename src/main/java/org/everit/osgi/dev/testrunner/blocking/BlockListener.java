@@ -1,4 +1,5 @@
-package org.everit.osgi.dev.testrunner.internal.util;
+package org.everit.osgi.dev.testrunner.blocking;
+
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -22,30 +23,18 @@ package org.everit.osgi.dev.testrunner.internal.util;
  */
 
 /**
- * Helper methods to check whether a technology is available in the OSGi framework.
+ * A {@link Blocker} can notify the {@link BlockingManager} that is should block or let starting the test runners via
+ * this listener.
  */
-public final class DependencyUtil {
+public interface BlockListener {
 
     /**
-     * The variable that holds if the blueprint API is available or not.
+     * The {@link BlockingManager} should not start the test runners yet.
      */
-    private static final boolean BLUEPRINT_AVAILABLE;
+    void block();
 
-    static {
-        ClassLoader classLoader = DependencyUtil.class.getClassLoader();
-        boolean blueprintAvailable = true;
-        try {
-            classLoader.loadClass("org.osgi.service.blueprint.container.BlueprintListener");
-        } catch (ClassNotFoundException e) {
-            blueprintAvailable = false;
-        }
-        BLUEPRINT_AVAILABLE = blueprintAvailable;
-    }
-
-    public static boolean isBlueprintAvailable() {
-        return BLUEPRINT_AVAILABLE;
-    }
-
-    private DependencyUtil() {
-    }
+    /**
+     * The {@link BlockingManager} should start the test runners if no other {@link Blocker} blocks.
+     */
+    void unblock();
 }

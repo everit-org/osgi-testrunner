@@ -100,12 +100,6 @@
             <version>1.5.0</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.everit.osgi.bundles</groupId>
-            <artifactId>org.everit.osgi.bundles.org.osgi.service.blueprint</artifactId>
-            <version>1.0.0</version>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
     <repositories>
         <repository>

@@ -21,6 +21,8 @@ package org.everit.osgi.dev.testrunner.internal.blocking;
  * MA 02110-1301  USA
  */
 
+import org.everit.osgi.dev.testrunner.blocking.AbstractBlocker;
+import org.everit.osgi.dev.testrunner.blocking.Blocker;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkEvent;
@@ -29,7 +31,7 @@ import org.osgi.framework.FrameworkListener;
 /**
  * One of the main {@link Blocker}s of this technology that blocks test running until the framework bundle is started.
  */
-public class FrameworkBlockerImpl implements Blocker, FrameworkListener {
+public class FrameworkBlockerImpl extends AbstractBlocker {
 
     /**
      * Whether this {@link Blocker} currently blocks the {@link BlockingManager} or not.
@@ -39,19 +41,16 @@ public class FrameworkBlockerImpl implements Blocker, FrameworkListener {
     /**
      * The context of the testrunner bundle.
      */
-    private BundleContext bundleContext;
-
+    private final BundleContext bundleContext;
+    
     /**
-     * The listener to notify the {@link BlockingManager} about blocking events.
+     * The framework listener that notifies the blocking listeners when the framework is started. 
      */
-    private BlockListener blockListener;
+    private FrameworkListener frameworkListener;
 
-    @Override
-    public void frameworkEvent(final FrameworkEvent event) {
-        if (event.getType() == FrameworkEvent.STARTED) {
-            blockListener.unblock();
-            blocking = false;
-        }
+    
+    public FrameworkBlockerImpl(final BundleContext bundleContext) {
+        this.bundleContext = bundleContext;
     }
 
     @Override
@@ -61,24 +60,32 @@ public class FrameworkBlockerImpl implements Blocker, FrameworkListener {
         }
     }
 
-    @Override
-    public void start(final BlockListener listener, final BundleContext context) {
-        blockListener = listener;
-        bundleContext = context;
-        context.addFrameworkListener(this);
-        Bundle frameworkBundle = context.getBundle(0);
+    public void start() {
+        frameworkListener = new FrameworkListener() {
+            
+            @Override
+            public void frameworkEvent(FrameworkEvent event) {
+                if (event.getType() == FrameworkEvent.STARTED) {
+                    blocking = false;
+                    notifyListenersAboutUnblock();
+                }
+                
+            }
+        };
+        bundleContext.addFrameworkListener(frameworkListener);
+        
+        Bundle frameworkBundle = bundleContext.getBundle(0);
         if (frameworkBundle.getState() != Bundle.ACTIVE) {
             blocking = true;
-            listener.block();
+            notifyListenersAboutBlock();
         } else {
             blocking = false;
         }
 
     }
 
-    @Override
     public void stop() {
-        bundleContext.removeFrameworkListener(this);
+        bundleContext.removeFrameworkListener(frameworkListener);
     }
 
 }

@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.internal.blocking;
+package org.everit.osgi.dev.testrunner.blocking;
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -21,7 +21,6 @@ package org.everit.osgi.dev.testrunner.internal.blocking;
  * MA 02110-1301  USA
  */
 
-import org.osgi.framework.BundleContext;
 
 /**
  * A Blocker can hold the tests from running. Many technologies do a set up on a new thread (e.g. Blueprint). In this
@@ -41,19 +40,14 @@ public interface Blocker {
     void logBlockCauses(StringBuilder sb);
 
     /**
-     * Starting the Blocker. ServiceTrackers, ServiceRegistrations or other resources can be started here that are
-     * necessary to monitor the asynchron technology.
-     * 
-     * @param listener
-     *            When a Blocker thinks it should block or unblock the test running it should call the functions of the
-     *            listener to let the {@link BlockingManager} know about it.
-     * @param context
-     *            The {@link BundleContext} of the testrunner bundle.
+     * Adding a listener to the Blocker so it can notify the listener about blocking and unblocking.
      */
-    void start(BlockListener listener, BundleContext context);
+    void addBlockListener(BlockListener blockListener);
 
     /**
-     * Stopping the Blocker. Every resources should be released here if necessary.
+     * Removing a blocking listener so it does not have to be notified anymore.
+     * 
+     * @param blockListener
      */
-    void stop();
+    void removeBlockListener(BlockListener blockListener);
 }

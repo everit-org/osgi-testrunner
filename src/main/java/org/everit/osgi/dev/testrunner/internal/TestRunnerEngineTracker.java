@@ -1,4 +1,4 @@
-package org.everit.osgi.dev.testrunner.internal.blocking;
+package org.everit.osgi.dev.testrunner.internal;
 
 /*
  * Copyright (c) 2011, Everit Kft.
@@ -21,19 +21,12 @@ package org.everit.osgi.dev.testrunner.internal.blocking;
  * MA 02110-1301  USA
  */
 
-/**
- * A {@link Blocker} can notify the {@link BlockingManager} that is should block or let starting the test runners via
- * this listener.
- */
-public interface BlockListener {
+import org.everit.osgi.dev.testrunner.engine.TestRunnerEngine;
+
+public interface TestRunnerEngineTracker {
 
     /**
-     * The {@link BlockingManager} should not start the test runners yet.
+     * Returns a test runner for the engine type if available, otherwise null.
      */
-    void block();
-
-    /**
-     * The {@link BlockingManager} should start the test runners if no other {@link Blocker} blocks.
-     */
-    void unblock();
+    TestRunnerEngine getEngineByType(String testEngineType);
 }

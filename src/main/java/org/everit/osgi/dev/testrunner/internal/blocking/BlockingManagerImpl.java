@@ -24,15 +24,17 @@ package org.everit.osgi.dev.testrunner.internal.blocking;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.everit.osgi.dev.testrunner.blocking.BlockListener;
+import org.everit.osgi.dev.testrunner.blocking.Blocker;
 import org.everit.osgi.dev.testrunner.internal.util.BundleUtil;
-import org.everit.osgi.dev.testrunner.internal.util.DependencyUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,17 +44,58 @@ import org.slf4j.LoggerFactory;
  * {@link Blocker} implementations can monitor their state and notify the {@link BlockingManager} when the tests are
  * ready to run.
  */
-public final class BlockingManagerImpl implements BlockingManager {
+public final class BlockingManagerImpl {
 
-    /**
-     * The list of {@link Blocker}s that can block the test running.
-     */
-    private static final List<Blocker> BLOCKERS;
+    private class BlockerServiceTrackerCustomizer implements ServiceTrackerCustomizer<Blocker, Blocker> {
+
+        private Map<Blocker, BlockListener> listenersByBlockers = new ConcurrentHashMap<Blocker, BlockListener>();
+
+        @Override
+        public Blocker addingService(ServiceReference<Blocker> reference) {
+            final Blocker blocker = bundleContext.getService(reference);
+            BlockListener blockListener = new BlockListener() {
+
+                @Override
+                public void unblock() {
+                    activeBlockers.remove(blocker);
+                    if (activeBlockers.size() == 0) {
+                        synchronized (testRunningWaiter) {
+                            testRunningWaiter.notify();
+                        }
+                    }
+                }
+
+                @Override
+                public void block() {
+                    activeBlockers.put(blocker, true);
+                }
+            };
+            listenersByBlockers.put(blocker, blockListener);
+            
+            blocker.addBlockListener(blockListener);
+            return blocker;
+        }
+
+        @Override
+        public void modifiedService(ServiceReference<Blocker> reference, Blocker service) {
+        }
+
+        @Override
+        public void removedService(ServiceReference<Blocker> reference, Blocker blocker) {
+            BlockListener blockListener = listenersByBlockers.remove(blocker);
+            if (blockListener != null) {
+                blocker.removeBlockListener(blockListener);
+            }
+            activeBlockers.remove(blocker);
+            bundleContext.ungetService(reference);
+        }
+
+    }
 
     /**
      * The period of time when the causes of the blocks are logged in millisecs.
      */
-    public static final int BLOCKING_CAUSE_LOG_PERIOD = 30000;
+    public static final long BLOCKING_CAUSE_LOG_PERIOD = 30000;
 
     /**
      * The max. length in a string of a bundle id. This is used for pretty output during logging.
@@ -69,16 +112,6 @@ public final class BlockingManagerImpl implements BlockingManager {
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockingManagerImpl.class);
 
-    static {
-        BLOCKERS = new ArrayList<Blocker>();
-
-        BLOCKERS.add(new FrameworkBlockerImpl());
-        if (DependencyUtil.isBlueprintAvailable()) {
-            BLOCKERS.add(new BlueprintBlockerImpl());
-        }
-
-    }
-
     /**
      * The blockers that are currently blocking the test runners.
      */
@@ -92,29 +125,16 @@ public final class BlockingManagerImpl implements BlockingManager {
     private Thread blockingManagerThread;
 
     /**
-     * Test runners that were started by this manager.
-     */
-    private Map<TestRunner, Boolean> startedTestRunners = new ConcurrentHashMap<TestRunner, Boolean>();
-
-    /**
      * A flag that indicates whether this manager is stopped or not.
      */
     private AtomicBoolean stopped = new AtomicBoolean(true);
 
     /**
-     * The system bundle of this OSGI container. Tests may not start until the framework is started.
+     * The context of the current bundle.
      */
-    private final Bundle systemBundle;
+    private BundleContext bundleContext;
 
-    /**
-     * Helper object for synchronization of the threads that are waiting for test results.
-     */
-    private Object testResultGettingWaiter = new Object();
-
-    /**
-     * The queue of tests that will run.
-     */
-    private final Queue<TestRunner> testRunnerQueue = new ConcurrentLinkedQueue<TestRunner>();
+    private ServiceTracker<Blocker, Blocker> blockerTracker;
 
     /**
      * Helper object to be able to wait until framework is launched and all blueprint bundles are either started or
@@ -129,13 +149,7 @@ public final class BlockingManagerImpl implements BlockingManager {
      *            bundle context that will be used to get the system bundle.
      */
     public BlockingManagerImpl(final BundleContext bundleContext) {
-        systemBundle = bundleContext.getBundle(0);
-    }
-
-    @Override
-    public void addTestRunner(final TestRunner testRunner) {
-        LOGGER.info("Adding test runner to the queue: " + testRunner.toString());
-        testRunnerQueue.add(testRunner);
+        this.bundleContext = bundleContext;
     }
 
     private void logBlockCauses() {
@@ -152,7 +166,7 @@ public final class BlockingManagerImpl implements BlockingManager {
      * logs out the bundle names that are not in active state after the framework is started.
      */
     private void logNonStartedBundles() {
-        Bundle[] bundles = systemBundle.getBundleContext().getBundles();
+        Bundle[] bundles = bundleContext.getBundles();
         List<Bundle> nonStartedBundles = new ArrayList<Bundle>();
         for (Bundle bundle : bundles) {
             if (bundle.getState() != Bundle.ACTIVE) {
@@ -164,8 +178,9 @@ public final class BlockingManagerImpl implements BlockingManager {
         }
 
         if (nonStartedBundles.size() > 0) {
-            StringBuilder sb = new StringBuilder("The following bundles are not started (this can be a cause if")
-                    .append(" your tests fail to run): \n");
+            StringBuilder sb =
+                    new StringBuilder("The following bundles are not started (this can be a cause if")
+                            .append(" your tests fail to run): \n");
             for (Bundle bundle : nonStartedBundles) {
                 String bundleId = String.valueOf(bundle.getBundleId());
                 sb.append(bundleId);
@@ -183,46 +198,24 @@ public final class BlockingManagerImpl implements BlockingManager {
         }
     }
 
-    @Override
-    public void start(final BundleContext context) {
+    public void start() {
+
         if (stopped.compareAndSet(true, false)) {
-            for (final Blocker blocker : BLOCKERS) {
-                blocker.start(new BlockListener() {
+            blockerTracker =
+                    new ServiceTracker<Blocker, Blocker>(bundleContext, Blocker.class,
+                            new BlockerServiceTrackerCustomizer());
+            blockerTracker.open();
 
-                    @Override
-                    public void block() {
-                        activeBlockers.put(blocker, true);
-
-                    }
-
-                    @Override
-                    public void unblock() {
-                        activeBlockers.remove(blocker);
-                        if (activeBlockers.size() == 0) {
-                            synchronized (testRunningWaiter) {
-                                testRunningWaiter.notify();
-                            }
-                        }
-                    }
-                }, context);
-            }
             blockingManagerThread = new Thread(new Runnable() {
 
                 @Override
                 public void run() {
-                    waitForTestsToStart();
+                    while (!stopped.get() && !waitForTestsToStart(BLOCKING_CAUSE_LOG_PERIOD)) {
+                        logBlockCauses();
+                    }
+
                     if (!stopped.get()) {
                         logNonStartedBundles();
-                        TestRunner testRunner = testRunnerQueue.peek();
-                        while ((testRunner != null) && !stopped.get()) {
-                            testRunner.start();
-                            startedTestRunners.put(testRunner, Boolean.TRUE);
-                            testRunnerQueue.remove();
-                            testRunner = testRunnerQueue.peek();
-                        }
-                    }
-                    synchronized (testResultGettingWaiter) {
-                        testResultGettingWaiter.notify();
                     }
                 }
             });
@@ -232,63 +225,34 @@ public final class BlockingManagerImpl implements BlockingManager {
         }
     }
 
-    @Override
     public void stop() {
         if (stopped.compareAndSet(false, true)) {
-            stopStartedTestRunners();
-            blockingManagerThread.interrupt();
-            synchronized (testResultGettingWaiter) {
-                testResultGettingWaiter.notify();
-            }
+            blockerTracker.close();
             synchronized (testRunningWaiter) {
-                testRunningWaiter.notify();
+                testRunningWaiter.notifyAll();
             }
+            blockingManagerThread.interrupt();            
         } else {
             LOGGER.warn("Stop called on Test Runner BlockingManager while it was already stopped");
         }
 
     }
 
-    private void stopStartedTestRunners() {
-        for (TestRunner testRunner : startedTestRunners.keySet()) {
-            testRunner.stop();
-        }
-
-    }
-
-    @Override
-    public void waitForTestResultsAfterStartup() {
-        synchronized (testResultGettingWaiter) {
-            while (((activeBlockers.size() > 0) || (testRunnerQueue.size() > 0)) && !stopped.get()) {
-                try {
-                    testResultGettingWaiter.wait(BLOCKING_CAUSE_LOG_PERIOD);
-                    if (systemBundle.getState() != Bundle.ACTIVE) {
-                        LOGGER.info("Waiting for the framework to start");
-                    }
-                } catch (InterruptedException e) {
-                    LOGGER.error("Test result waiting  was interrupted", e);
-                    stop();
-                }
-            }
-        }
-    }
-
-    private void waitForTestsToStart() {
+    public boolean waitForTestsToStart(long timeout) {
         synchronized (testRunningWaiter) {
-            while (!stopped.get()
-                    && (activeBlockers.size() > 0)) {
-                LOGGER.info(testRunnerQueue.size() + " test runners are waiting to run");
-                try {
-                    testRunningWaiter.wait(BLOCKING_CAUSE_LOG_PERIOD);
-                    if ((activeBlockers.size() > 0) && !stopped.get()) {
-                        logBlockCauses();
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    LOGGER.error("Test running waiting was interrupted");
-                    stop();
+            try {
+                testRunningWaiter.wait(timeout);
+                if ((activeBlockers.size() > 0) && !stopped.get()) {
+                    return false;
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOGGER.error("Test running waiting was interrupted");
+                stop();
+                return false;
             }
+
         }
+        return true;
     }
 }

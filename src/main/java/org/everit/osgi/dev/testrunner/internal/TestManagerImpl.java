@@ -22,161 +22,160 @@ package org.everit.osgi.dev.testrunner.internal;
  */
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
+import org.everit.osgi.dev.testrunner.engine.TestClassResult;
+import org.everit.osgi.dev.testrunner.engine.TestRunnerEngine;
 import org.osgi.framework.Filter;
+import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestManagerImpl implements TestManager {
 
-    private Set<Filter> startupTestInclusionFilters = new HashSet<Filter>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestManagerImpl.class);
 
-    private ReadWriteLock startupTestInclusionRWLock = new ReentrantReadWriteLock(false);
+    private Set<Filter> testInclusionFilters = new HashSet<Filter>();
 
-    private Set<Filter> startupTestExclusionFilters = new HashSet<Filter>();
+    private ReadWriteLock testInclusionRWLock = new ReentrantReadWriteLock(false);
 
-    private ReadWriteLock startupTestExclusionRWLock = new ReentrantReadWriteLock(false);
+    private Set<Filter> testExclusionFilters = new HashSet<Filter>();
 
-    private Set<Filter> deployedTestInclusionFilters = new HashSet<Filter>();
+    private ReadWriteLock testExclusionRWLock = new ReentrantReadWriteLock(false);
 
-    private ReadWriteLock deployedTestInclusionRWLock = new ReentrantReadWriteLock(false);
+    private final TestRunnerEngineTracker testRunnerEngineTracker;
 
-    private Set<Filter> deployedTestExclusionFilters = new HashSet<Filter>();
-
-    private ReadWriteLock deployedTestExclusionRWLock = new ReentrantReadWriteLock(false);
+    public TestManagerImpl(TestRunnerEngineTracker testRunnerEngineTracker) {
+        this.testRunnerEngineTracker = testRunnerEngineTracker;
+    }
 
     @Override
-    public boolean addStartupTestInclusionFilter(Filter filter) {
-        Lock writeLock = startupTestInclusionRWLock.writeLock();
+    public boolean addTestInclusionFilter(Filter filter) {
+        Lock writeLock = testInclusionRWLock.writeLock();
         writeLock.lock();
         try {
-            return startupTestInclusionFilters.add(filter);
+            return testInclusionFilters.add(filter);
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public boolean addStartupTestExclusionFilter(Filter filter) {
-        Lock writeLock = startupTestExclusionRWLock.writeLock();
+    public boolean addTestExclusionFilter(Filter filter) {
+        Lock writeLock = testExclusionRWLock.writeLock();
         writeLock.lock();
         try {
-            return startupTestExclusionFilters.add(filter);
+            return testExclusionFilters.add(filter);
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public boolean removeStartupTestInclusion(Filter filter) {
-        Lock writeLock = startupTestInclusionRWLock.writeLock();
+    public boolean removeTestInclusionFilter(Filter filter) {
+        Lock writeLock = testInclusionRWLock.writeLock();
         writeLock.lock();
         try {
-            return startupTestInclusionFilters.remove(filter);
+            return testInclusionFilters.remove(filter);
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public boolean removeStartupTestExclusionFilter(Filter filter) {
-        Lock writeLock = startupTestExclusionRWLock.writeLock();
+    public boolean removeTestExclusionFilter(Filter filter) {
+        Lock writeLock = testExclusionRWLock.writeLock();
         writeLock.lock();
         try {
-            return startupTestExclusionFilters.remove(filter);
+            return testExclusionFilters.remove(filter);
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public Set<Filter> getStartupTestExclusionFilters() {
-        Lock readLock = startupTestExclusionRWLock.readLock();
+    public Set<Filter> getTestExclusionFilters() {
+        Lock readLock = testExclusionRWLock.readLock();
         readLock.lock();
         try {
-            return new HashSet<Filter>(startupTestExclusionFilters);
+            return new HashSet<Filter>(testExclusionFilters);
         } finally {
             readLock.unlock();
         }
     }
 
     @Override
-    public Set<Filter> getStartupTestInclusionFilters() {
-        Lock readLock = startupTestInclusionRWLock.readLock();
+    public Set<Filter> getTestInclusionFilters() {
+        Lock readLock = testInclusionRWLock.readLock();
         readLock.lock();
         try {
-            return new HashSet<Filter>(startupTestInclusionFilters);
+            return new HashSet<Filter>(testInclusionFilters);
         } finally {
             readLock.unlock();
         }
     }
 
     @Override
-    public boolean addDeployedTestInclusionFilter(Filter filter) {
-        Lock writeLock = deployedTestInclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return deployedTestInclusionFilters.add(filter);
-        } finally {
-            writeLock.unlock();
+    public List<TestClassResult> runTest(ServiceReference<Object> reference, boolean evenIfExcluded) {
+        if (!evenIfExcluded && !shouldTestRun(reference)) {
+            return null;
         }
+
+        Object engineTypeObject = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
+        if (engineTypeObject == null || !(engineTypeObject instanceof String)) {
+            LOGGER.warn("Unrecognized '" + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
+                    + "' service property value for test. Ignoring: " + reference.toString());
+            return null;
+        }
+
+        TestRunnerEngine runnerEngine = testRunnerEngineTracker.getEngineByType((String) engineTypeObject);
+        if (runnerEngine == null) {
+            LOGGER.warn("No test runner available for type '" + engineTypeObject + "'. Ignoring test: "
+                    + reference.toString());
+            return null;
+        }
+
+        return runnerEngine.runTest(reference);
+
     }
 
-    @Override
-    public boolean addDeployedTestExclusionFilter(Filter filter) {
-        Lock writeLock = deployedTestExclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return deployedTestExclusionFilters.add(filter);
-        } finally {
-            writeLock.unlock();
-        }
-    }
+    private boolean shouldTestRun(ServiceReference<Object> reference) {
+        Lock inclusionReadLock = testInclusionRWLock.readLock();
+        inclusionReadLock.lock();
 
-    @Override
-    public boolean removeDeployedTestInclusionFilter(Filter filter) {
-        Lock writeLock = deployedTestInclusionRWLock.writeLock();
-        writeLock.lock();
         try {
-            return deployedTestInclusionFilters.remove(filter);
+            for (Filter filter : testInclusionFilters) {
+                boolean match = filter.match(reference);
+                if (match) {
+                    return true;
+                }
+            }
         } finally {
-            writeLock.unlock();
+            inclusionReadLock.unlock();
         }
-    }
 
-    @Override
-    public boolean removeDeployedTestExclusionFilter(Filter filter) {
-        Lock writeLock = deployedTestExclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return deployedTestExclusionFilters.remove(filter);
-        } finally {
-            writeLock.unlock();
-        }
-    }
+        Lock exclusionReadLock = testExclusionRWLock.readLock();
+        exclusionReadLock.lock();
 
-    @Override
-    public Set<Filter> getDeployedTestExclusionFilters() {
-        Lock readLock = deployedTestExclusionRWLock.readLock();
-        readLock.lock();
         try {
-            return new HashSet<Filter>(deployedTestExclusionFilters);
+            for (Filter filter : testExclusionFilters) {
+                boolean match = filter.match(reference);
+                if (match) {
+                    LOGGER.info("Not running test [" + reference.toString() + "] due to exclusion filter ["
+                            + filter.toString() + "].");
+                    return true;
+                }
+            }
         } finally {
-            readLock.unlock();
+            exclusionReadLock.unlock();
         }
-    }
 
-    @Override
-    public Set<Filter> getDeployedTestInclusionFilters() {
-        Lock readLock = deployedTestInclusionRWLock.readLock();
-        readLock.lock();
-        try {
-            return new HashSet<Filter>(deployedTestInclusionFilters);
-        } finally {
-            readLock.unlock();
-        }
+        return true;
     }
 }

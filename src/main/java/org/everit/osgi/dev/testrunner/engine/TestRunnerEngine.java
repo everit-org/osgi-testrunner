@@ -1,4 +1,6 @@
-package org.everit.osgi.dev.testrunner.internal.blocking;
+package org.everit.osgi.dev.testrunner.engine;
+
+import java.util.List;
 
 import org.osgi.framework.ServiceReference;
 
@@ -24,21 +26,18 @@ import org.osgi.framework.ServiceReference;
  */
 
 /**
- * The class that implements this interface can run tests after the framework is started and all Blueprint bundles are
- * either started or failed.
+ * The class that implements this interface can run tests after the framework is started.
  */
-public interface TestRunner {
+public interface TestRunnerEngine {
 
     /**
-     * Starting the test runner.
+     * Runs a test based on the service reference. The function is not called multiple times parallel.
+     * 
+     * @param reference
+     *            The service reference that contains the test.
+     * 
+     * @return The test result of all classes that belong to this reference.
      */
-    void start();
-
-    /**
-     * Stopping the test runner.
-     */
-    void stop();
-    
-    void runTest(ServiceReference<Object> reference);
+    List<TestClassResult> runTest(ServiceReference<Object> reference);
 
 }
