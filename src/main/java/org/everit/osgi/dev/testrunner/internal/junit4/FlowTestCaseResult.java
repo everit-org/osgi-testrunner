@@ -48,7 +48,8 @@ public class FlowTestCaseResult {
      *            The time when the TestCase was started.
      */
     public FlowTestCaseResult(String className, String methodName, final Long startTime) {
-
+        this.className = className;
+        this.methodName = methodName;
         this.startTime = startTime;
     }
 

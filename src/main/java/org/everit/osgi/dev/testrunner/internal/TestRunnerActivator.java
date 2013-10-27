@@ -37,8 +37,10 @@ import java.util.Map.Entry;
 
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
+import org.everit.osgi.dev.testrunner.blocking.Blocker;
 import org.everit.osgi.dev.testrunner.engine.TestRunnerEngine;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
+import org.everit.osgi.dev.testrunner.internal.blocking.FrameworkBlockerImpl;
 import org.everit.osgi.dev.testrunner.internal.junit4.Junit4TestRunner;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -104,7 +106,18 @@ public class TestRunnerActivator implements BundleActivator {
 
         @Override
         public void run() {
-            // TODO
+            synchronized (startupTestRunningWaiter) {
+                try {
+                    while (!startupTestsRan) {
+                        System.out.println("Starting to wait for test running");
+                        startupTestRunningWaiter.wait();
+                    }
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+            }
 
             stopFramework();
 
@@ -184,7 +197,9 @@ public class TestRunnerActivator implements BundleActivator {
             LOGGER.info("Tests had been ran, stopping framework");
             try {
                 framework.stop();
+                System.out.println("Starting to wait for stop framework");
                 framework.waitForStop(0);
+                System.out.println("framework stopped");
             } catch (BundleException e) {
                 logStackTrace(e);
             } catch (InterruptedException e) {
@@ -207,9 +222,15 @@ public class TestRunnerActivator implements BundleActivator {
 
     private ServiceRegistration<TestManager> testManagerSR;
 
+    private ServiceRegistration<Blocker> frameworkBlockerSR;
+
+    private FrameworkBlockerImpl frameworkBlocker;
+
     private TestRunnerEngineServiceTracker testRunnerEngineServiceTracker;
 
     private Thread waitingTestsToRunThread;
+
+    private volatile boolean startupTestsRan = false;
 
     private Object startupTestRunningWaiter = new Object();
 
@@ -225,6 +246,10 @@ public class TestRunnerActivator implements BundleActivator {
 
         String resultDumpFolder = System.getenv(Constants.ENV_TEST_RESULT_FOLDER);
 
+        frameworkBlocker = new FrameworkBlockerImpl(context);
+        frameworkBlocker.start();
+        frameworkBlockerSR = context.registerService(Blocker.class, frameworkBlocker, new Hashtable<String, Object>());
+
         blockingManager = new BlockingManagerImpl(context);
         blockingManager.start();
 
@@ -236,7 +261,7 @@ public class TestRunnerActivator implements BundleActivator {
         testRunnerEngineServiceTracker = new TestRunnerEngineServiceTracker(context);
         testRunnerEngineServiceTracker.open();
 
-       final TestManagerImpl testManager = new TestManagerImpl(testRunnerEngineServiceTracker);
+        final TestManagerImpl testManager = new TestManagerImpl(testRunnerEngineServiceTracker);
         testManagerSR = context.registerService(TestManager.class, testManager, new Hashtable<String, Object>());
 
         waitingTestsToRunThread = new Thread(new Runnable() {
@@ -244,12 +269,18 @@ public class TestRunnerActivator implements BundleActivator {
             @Override
             public void run() {
                 boolean testsCanBeStarted = blockingManager.waitForTestsToStart(0);
+                System.out.println("WaitForTestsToStart arrived back with " + testsCanBeStarted);
                 if (testsCanBeStarted) {
                     testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager);
-                    startupTestRunningWaiter.notifyAll();
+                    testServiceTracker.open();
+                    startupTestsRan = true;
+                    synchronized (startupTestRunningWaiter) {
+                        startupTestRunningWaiter.notifyAll();
+                    }
                 }
             }
         });
+        waitingTestsToRunThread.start();
 
         String stopAfterTests = System.getenv(Constants.ENV_STOP_AFTER_TESTS);
         if (Boolean.parseBoolean(stopAfterTests)) {
@@ -273,6 +304,14 @@ public class TestRunnerActivator implements BundleActivator {
         }
         if (blockingManager != null) {
             blockingManager.stop();
+        }
+
+        if (frameworkBlocker != null) {
+            frameworkBlocker.stop();
+        }
+
+        if (frameworkBlockerSR != null) {
+            frameworkBlockerSR.unregister();
         }
         waitingTestsToRunThread.interrupt();
     }

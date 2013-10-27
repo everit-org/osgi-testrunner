@@ -57,21 +57,23 @@ public final class BlockingManagerImpl {
 
                 @Override
                 public void unblock() {
+                    System.out.println("Unblock called");
                     activeBlockers.remove(blocker);
                     if (activeBlockers.size() == 0) {
                         synchronized (testRunningWaiter) {
-                            testRunningWaiter.notify();
+                            testRunningWaiter.notifyAll();
                         }
                     }
                 }
 
                 @Override
                 public void block() {
+                    System.out.println("block called");
                     activeBlockers.put(blocker, true);
                 }
             };
             listenersByBlockers.put(blocker, blockListener);
-            
+
             blocker.addBlockListener(blockListener);
             return blocker;
         }
@@ -231,7 +233,7 @@ public final class BlockingManagerImpl {
             synchronized (testRunningWaiter) {
                 testRunningWaiter.notifyAll();
             }
-            blockingManagerThread.interrupt();            
+            blockingManagerThread.interrupt();
         } else {
             LOGGER.warn("Stop called on Test Runner BlockingManager while it was already stopped");
         }
@@ -241,7 +243,11 @@ public final class BlockingManagerImpl {
     public boolean waitForTestsToStart(long timeout) {
         synchronized (testRunningWaiter) {
             try {
-                testRunningWaiter.wait(timeout);
+                System.out.println("Active blockers size: " + activeBlockers.size());
+                if (!stopped.get() && activeBlockers.size() > 0) {
+                    
+                    testRunningWaiter.wait(timeout);
+                }
                 if ((activeBlockers.size() > 0) && !stopped.get()) {
                     return false;
                 }

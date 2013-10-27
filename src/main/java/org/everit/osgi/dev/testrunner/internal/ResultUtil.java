@@ -144,6 +144,7 @@ public final class ResultUtil {
                 failure.printStackTrace(pw);
             }
         }
+        pw.flush();
     }
 
     /**
@@ -253,6 +254,7 @@ public final class ResultUtil {
             sb.append("_").append(testId);
         }
         if (includeDate) {
+            sb.append("_");
             SimpleDateFormat dateFormat = new SimpleDateFormat("YYYYMMddHHmmss");
             String formattedDate = dateFormat.format(new Date());
             sb.append(formattedDate);
@@ -320,15 +322,15 @@ public final class ResultUtil {
             final String testId, final File file, boolean append) throws IOException {
         boolean existed = file.exists();
         FileOutputStream fout = new FileOutputStream(file, append);
-        try {
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout, "UTF8"));
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout, "UTF8"));
+        try {;
             if (existed && append) {
                 bw.write("\n\n");
-                dumpTextResult(testClassResult, testId, bw);
             }
+            dumpTextResult(testClassResult, testId, bw);
         } finally {
-            if (fout != null) {
-                fout.close();
+            if (bw != null) {
+                bw.close();
             }
         }
 

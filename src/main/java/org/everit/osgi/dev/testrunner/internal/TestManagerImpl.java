@@ -141,7 +141,9 @@ public class TestManagerImpl implements TestManager {
             return null;
         }
 
-        return runnerEngine.runTest(reference);
+        List<TestClassResult> result = runnerEngine.runTest(reference);
+        LOGGER.info("Test result: " + result.toString());
+        return result;
 
     }
 
@@ -169,7 +171,7 @@ public class TestManagerImpl implements TestManager {
                 if (match) {
                     LOGGER.info("Not running test [" + reference.toString() + "] due to exclusion filter ["
                             + filter.toString() + "].");
-                    return true;
+                    return false;
                 }
             }
         } finally {

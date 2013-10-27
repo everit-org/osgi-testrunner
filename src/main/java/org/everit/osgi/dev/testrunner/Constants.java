@@ -40,7 +40,7 @@ public final class Constants {
      * Optional property for test services. The property must be available if multiple tests are registered as OSGi
      * service based on the same interface.
      */
-    public static String SERVICE_PROPERTY_TEST_ID = "osgitest.id";
+    public static String SERVICE_PROPERTY_TEST_ID = "osgitest.testId";
 
     /**
      * The time in ms until the testrunner will wait for non-deamon threads stopping before exiting the vm when

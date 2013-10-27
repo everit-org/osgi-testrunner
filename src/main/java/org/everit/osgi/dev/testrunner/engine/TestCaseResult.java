@@ -78,4 +78,12 @@ public class TestCaseResult {
     public String getMethodName() {
         return methodName;
     }
+
+    @Override
+    public String toString() {
+        return "TestCaseResult [methodName=" + methodName + ", startTime=" + startTime + ", finishTime=" + finishTime
+                + ", failure=" + failure + ", running time=" + getRunningTime() + "ms]";
+    }
+    
+    
 }

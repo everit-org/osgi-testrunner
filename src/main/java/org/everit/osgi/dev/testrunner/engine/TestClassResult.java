@@ -111,4 +111,14 @@ public class TestClassResult {
         return className;
     }
 
+    @Override
+    public String toString() {
+        return "TestClassResult [className=" + className + ", errorCount=" + errorCount + ", failureCount="
+                + failureCount + ", ignoreCount=" + ignoreCount + ", runCount=" + runCount + ", startTime=" + startTime
+                + ", finishTime=" + finishTime + ", testCaseResults=" + testCaseResults + ", running time="
+                + getRunTime() + "ms]";
+    }
+    
+    
+
 }

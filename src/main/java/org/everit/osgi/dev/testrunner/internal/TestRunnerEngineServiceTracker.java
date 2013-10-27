@@ -34,6 +34,7 @@ import org.everit.osgi.dev.testrunner.engine.TestRunnerEngine;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestRunnerEng
 
     public TestRunnerEngineServiceTracker(BundleContext bundleContext) {
         super(bundleContext, TestRunnerEngine.class, null);
+        this.bundleContext = bundleContext;
     }
 
     /**
@@ -54,6 +56,12 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestRunnerEng
     private ReentrantReadWriteLock mapRWLock = new ReentrantReadWriteLock(false);
 
     private BundleContext bundleContext;
+
+    public TestRunnerEngineServiceTracker(BundleContext context, ServiceReference<TestRunnerEngine> reference,
+            ServiceTrackerCustomizer<TestRunnerEngine, TestRunnerEngine> customizer, BundleContext bundleContext) {
+        super(context, reference, customizer);
+        this.bundleContext = bundleContext;
+    }
 
     @Override
     public TestRunnerEngine addingService(ServiceReference<TestRunnerEngine> reference) {
@@ -113,10 +121,12 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestRunnerEng
         ReadLock readLock = mapRWLock.readLock();
         readLock.lock();
         List<TestRunnerEngine> testRunners = testRunnersByEngineType.get(testEngineType);
+        readLock.unlock();
         if (testRunners != null) {
             return testRunners.get(0);
         } else {
             return null;
         }
+        
     }
 }
