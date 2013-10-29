@@ -21,87 +21,16 @@ package org.everit.osgi.dev.testrunner;
  * MA 02110-1301  USA
  */
 
+import java.awt.GraphicsEnvironment;
 import java.util.List;
-import java.util.Set;
 
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
-import org.osgi.framework.Filter;
 import org.osgi.framework.ServiceReference;
 
 /**
- * Via the TestManager OSGi service 3rd party tools can specify which tests should run after a bundle deployment. The
- * management is based on OSGi {@link Filter}s. Inclusion priority is higher than exclusion. This means, that:
- * <ul>
- * <li>In case a test service matches an exclusion filter, it will be excluded</li>
- * <li>In case a test service matches an inclusion filter, even if it matches with any exclusion filter, it will be
- * included</li>
- * <li>In case a test does not match with any exclusion and inclusion filter, it will be included</li>
- * </ul>
- * 
+ * Via the TestManager OSGi service 3rd party tools can specify which tests should run after a bundle deployment.
  */
 public interface TestManager {
-
-    /**
-     * Adding a test exclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
-     * more information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was added, false if the filter was already in the list of filters so nothing happened.
-     */
-    boolean addTestExclusionFilter(Filter filter);
-
-    /**
-     * Adding a test inclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
-     * more information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was added, false if the filter was already in the list of filters so nothing happened.
-     */
-    boolean addTestInclusionFilter(Filter filter);
-
-    /**
-     * Getting the exclusions that take effect during the deployment of the test bundles. For more information see the
-     * doc of the interface.
-     * 
-     * @return The set of filters. The set is unordered and modifying the element list of the set will not take effect
-     *         to the TestManager.
-     */
-    Set<Filter> getTestExclusionFilters();
-
-    /**
-     * Getting the inclusions that take effect during the deployment of the test bundles. For more information see the
-     * doc of the interface.
-     * 
-     * @return The set of filters. The set is unordered and modifying the element list of the set will not take effect
-     *         to the TestManager.
-     */
-    Set<Filter> getTestInclusionFilters();
-
-    /**
-     * Removing a test exclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
-     * more information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
-     */
-    boolean removeTestExclusionFilter(Filter filter);
-
-    /**
-     * Removing a test inclusion as an OSGi filter that will take effect during the deployment of the test bundles. For
-     * more information see the doc of the interface.
-     * 
-     * @param filter
-     *            The filter.
-     * 
-     * @return true if the filter was removed, false if the filter was not in the list of filters so nothing happened.
-     */
-    boolean removeTestInclusionFilter(Filter filter);
 
     /**
      * Runs all tests that are found based on the service reference.
@@ -109,10 +38,24 @@ public interface TestManager {
      * @param reference
      *            The service reference that points to test objects.
      * 
-     * @param evenIfExcluded
-     *            if true, the tests will run even if they are excluded based on the filter settings.
-     * 
      * @return The test results.
      */
-    List<TestClassResult> runTest(ServiceReference<Object> reference, boolean evenIfExcluded);
+    List<TestClassResult> runTest(ServiceReference<Object> reference);
+
+    /**
+     * Setting the test runner to beleive that the JVM is in development mode or not. By default, JVM is in development
+     * mode if the jvm is started in a graphical environment (see {@link GraphicsEnvironment#isHeadless()}).
+     * 
+     * @param inDevelopmentMode
+     *            The development
+     */
+    void setInDevelopmentMode(boolean inDevelopmentMode);
+
+    /**
+     * Checking if the JVM is in development mode from the perspective of the test runner. By default, JVM is in
+     * development mode if the jvm is started in a graphical environment (see {@link GraphicsEnvironment#isHeadless()}).
+     * 
+     * @return The development mode flag.
+     */
+    boolean isInDevelopmentMode();
 }

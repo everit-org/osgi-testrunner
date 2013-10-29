@@ -21,18 +21,13 @@ package org.everit.osgi.dev.testrunner.internal;
  * MA 02110-1301  USA
  */
 
-import java.util.HashSet;
+import java.awt.GraphicsEnvironment;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.everit.osgi.dev.testrunner.engine.TestEngine;
-import org.osgi.framework.Filter;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,91 +36,17 @@ public class TestManagerImpl implements TestManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestManagerImpl.class);
 
-    private Set<Filter> testExclusionFilters = new HashSet<Filter>();
-
-    private ReadWriteLock testExclusionRWLock = new ReentrantReadWriteLock(false);
-
-    private Set<Filter> testInclusionFilters = new HashSet<Filter>();
-
-    private ReadWriteLock testInclusionRWLock = new ReentrantReadWriteLock(false);
-
     private final TestRunnerEngineTracker testRunnerEngineTracker;
+    
+    private boolean inDevelopmentMode;
 
     public TestManagerImpl(final TestRunnerEngineTracker testRunnerEngineTracker) {
         this.testRunnerEngineTracker = testRunnerEngineTracker;
+        inDevelopmentMode = !GraphicsEnvironment.isHeadless();
     }
 
     @Override
-    public boolean addTestExclusionFilter(final Filter filter) {
-        Lock writeLock = testExclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return testExclusionFilters.add(filter);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    @Override
-    public boolean addTestInclusionFilter(final Filter filter) {
-        Lock writeLock = testInclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return testInclusionFilters.add(filter);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    @Override
-    public Set<Filter> getTestExclusionFilters() {
-        Lock readLock = testExclusionRWLock.readLock();
-        readLock.lock();
-        try {
-            return new HashSet<Filter>(testExclusionFilters);
-        } finally {
-            readLock.unlock();
-        }
-    }
-
-    @Override
-    public Set<Filter> getTestInclusionFilters() {
-        Lock readLock = testInclusionRWLock.readLock();
-        readLock.lock();
-        try {
-            return new HashSet<Filter>(testInclusionFilters);
-        } finally {
-            readLock.unlock();
-        }
-    }
-
-    @Override
-    public boolean removeTestExclusionFilter(final Filter filter) {
-        Lock writeLock = testExclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return testExclusionFilters.remove(filter);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    @Override
-    public boolean removeTestInclusionFilter(final Filter filter) {
-        Lock writeLock = testInclusionRWLock.writeLock();
-        writeLock.lock();
-        try {
-            return testInclusionFilters.remove(filter);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    @Override
-    public List<TestClassResult> runTest(final ServiceReference<Object> reference, final boolean evenIfExcluded) {
-        if (!evenIfExcluded && !shouldTestRun(reference)) {
-            return null;
-        }
+    public List<TestClassResult> runTest(final ServiceReference<Object> reference) {
 
         Object engineTypeObject = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if ((engineTypeObject == null) || !(engineTypeObject instanceof String)) {
@@ -142,43 +63,19 @@ public class TestManagerImpl implements TestManager {
             return null;
         }
 
-        List<TestClassResult> result = runnerEngine.runTest(reference);
+        List<TestClassResult> result = runnerEngine.runTest(reference, inDevelopmentMode);
         LOGGER.debug("Test result: " + result.toString());
         return result;
 
     }
-
-    private boolean shouldTestRun(final ServiceReference<Object> reference) {
-        Lock inclusionReadLock = testInclusionRWLock.readLock();
-        inclusionReadLock.lock();
-
-        try {
-            for (Filter filter : testInclusionFilters) {
-                boolean match = filter.match(reference);
-                if (match) {
-                    return true;
-                }
-            }
-        } finally {
-            inclusionReadLock.unlock();
-        }
-
-        Lock exclusionReadLock = testExclusionRWLock.readLock();
-        exclusionReadLock.lock();
-
-        try {
-            for (Filter filter : testExclusionFilters) {
-                boolean match = filter.match(reference);
-                if (match) {
-                    LOGGER.info("Not running test [" + reference.toString() + "] due to exclusion filter ["
-                            + filter.toString() + "].");
-                    return false;
-                }
-            }
-        } finally {
-            exclusionReadLock.unlock();
-        }
-
-        return true;
+    
+    @Override
+    public void setInDevelopmentMode(boolean inDevelopmentMode) {
+        this.inDevelopmentMode = inDevelopmentMode;
+    }
+    
+    @Override
+    public boolean isInDevelopmentMode() {
+        return inDevelopmentMode;
     }
 }

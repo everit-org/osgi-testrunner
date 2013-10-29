@@ -2,6 +2,8 @@ package org.everit.osgi.dev.testrunner.engine;
 
 import java.util.List;
 
+import org.everit.osgi.dev.testrunner.TestClassInDevelopmentMode;
+import org.everit.osgi.dev.testrunner.TestMethodInDevelopmentMode;
 import org.osgi.framework.ServiceReference;
 
 /*
@@ -35,9 +37,12 @@ public interface TestEngine {
      * 
      * @param reference
      *            The service reference that contains the test.
+     * @param developmentMode
+     *            In development mode tests should not run unless they are annotated with
+     *            {@link TestClassInDevelopmentMode} or {@link TestMethodInDevelopmentMode} annotations.
      * 
      * @return The test result of all classes that belong to this reference.
      */
-    List<TestClassResult> runTest(ServiceReference<Object> reference);
+    List<TestClassResult> runTest(ServiceReference<Object> reference, boolean developmentMode);
 
 }
