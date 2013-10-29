@@ -42,11 +42,11 @@ public class TestManagerImpl implements TestManager {
 
     public TestManagerImpl(final TestRunnerEngineTracker testRunnerEngineTracker) {
         this.testRunnerEngineTracker = testRunnerEngineTracker;
-        inDevelopmentMode = !GraphicsEnvironment.isHeadless();
+        inDevelopmentMode = !Boolean.parseBoolean(System.getenv(Constants.ENV_STOP_AFTER_TESTS));
     }
 
     @Override
-    public List<TestClassResult> runTest(final ServiceReference<Object> reference) {
+    public List<TestClassResult> runTest(final ServiceReference<Object> reference, boolean force) {
 
         Object engineTypeObject = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if ((engineTypeObject == null) || !(engineTypeObject instanceof String)) {
@@ -56,6 +56,7 @@ public class TestManagerImpl implements TestManager {
             return null;
         }
 
+        
         TestEngine runnerEngine = testRunnerEngineTracker.getEngineByType((String) engineTypeObject);
         if (runnerEngine == null) {
             LOGGER.warn("No test runner available for type '" + engineTypeObject + "'. Ignoring test: "
@@ -63,7 +64,7 @@ public class TestManagerImpl implements TestManager {
             return null;
         }
 
-        List<TestClassResult> result = runnerEngine.runTest(reference, inDevelopmentMode);
+        List<TestClassResult> result = runnerEngine.runTest(reference, force || inDevelopmentMode);
         LOGGER.debug("Test result: " + result.toString());
         return result;
 

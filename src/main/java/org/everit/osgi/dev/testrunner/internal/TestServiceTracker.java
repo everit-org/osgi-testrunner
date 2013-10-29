@@ -72,7 +72,7 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
 
     @Override
     public Object addingService(final ServiceReference<Object> reference) {
-        List<TestClassResult> testClassResults = testManager.runTest(reference);
+        List<TestClassResult> testClassResults = testManager.runTest(reference, false);
         if (testClassResults != null) {
             dumpTestResults(reference, testClassResults);
         } else {

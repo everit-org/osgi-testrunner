@@ -21,7 +21,6 @@ package org.everit.osgi.dev.testrunner;
  * MA 02110-1301  USA
  */
 
-import java.awt.GraphicsEnvironment;
 import java.util.List;
 
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
@@ -37,14 +36,17 @@ public interface TestManager {
      * 
      * @param reference
      *            The service reference that points to test objects.
+     * @param force
+     *            Force to run test methods in development mode even if they are not annotated to do so. See
+     *            {@link #setInDevelopmentMode(boolean)}.
      * 
      * @return The test results.
      */
-    List<TestClassResult> runTest(ServiceReference<Object> reference);
+    List<TestClassResult> runTest(ServiceReference<Object> reference, boolean force);
 
     /**
      * Setting the test runner to beleive that the JVM is in development mode or not. By default, JVM is in development
-     * mode if the jvm is started in a graphical environment (see {@link GraphicsEnvironment#isHeadless()}).
+     * mode if the {@link Constants#ENV_STOP_AFTER_TESTS} environment variable is set to true.
      * 
      * @param inDevelopmentMode
      *            The development
@@ -53,7 +55,7 @@ public interface TestManager {
 
     /**
      * Checking if the JVM is in development mode from the perspective of the test runner. By default, JVM is in
-     * development mode if the jvm is started in a graphical environment (see {@link GraphicsEnvironment#isHeadless()}).
+     * development mode if the {@link Constants#ENV_STOP_AFTER_TESTS} environment variable is set to true.
      * 
      * @return The development mode flag.
      */
