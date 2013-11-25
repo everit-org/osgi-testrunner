@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
@@ -34,12 +36,10 @@ import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TestServiceTracker extends ServiceTracker<Object, Object> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestServiceTracker.class);
+    private static final Logger LOGGER = Logger.getLogger(TestServiceTracker.class.getName());
 
     private static final File TEST_RESULT_FOLDER_FILE;
 
@@ -93,7 +93,7 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
                 try {
                     ResultUtil.writeTextResultToFile(testClassResult, testId, textFile, true);
                 } catch (IOException e) {
-                    LOGGER.error(
+                    LOGGER.log(Level.SEVERE, 
                             "Error during text test result " + testClassResult.toString() + " to file "
                                     + textFile.getAbsolutePath(), e);
                 }
@@ -105,7 +105,7 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
             try {
                 ResultUtil.dumpTextResult(testClassResult, testId, new PrintWriter(System.out));
             } catch (IOException e) {
-                LOGGER.error("Error dumping text result to standard output", e);
+                LOGGER.log(Level.SEVERE, "Error dumping text result to standard output", e);
             }
 
         }

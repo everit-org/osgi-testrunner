@@ -34,6 +34,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
@@ -45,8 +46,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.launch.Framework;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Activator of the bundle that activates the listeners for the different testing technologies.
@@ -210,7 +209,7 @@ public class TestRunnerActivator implements BundleActivator {
     /**
      * Logger of class.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestRunnerActivator.class);
+    private static final Logger LOGGER = Logger.getLogger(TestRunnerActivator.class.getName());
 
     /**
      * The blocking manager instance that is registered as a framework listener, a blueprint listener and as a service.

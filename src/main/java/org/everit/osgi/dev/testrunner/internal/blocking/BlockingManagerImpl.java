@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.blocking.BlockListener;
 import org.everit.osgi.dev.testrunner.blocking.Blocker;
@@ -35,8 +36,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A manager that handles all the blocking causes why the tests should not start and starts them when there is no more
@@ -110,7 +109,7 @@ public final class BlockingManagerImpl {
     /**
      * Logger of class.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(BlockingManagerImpl.class);
+    private static final Logger LOGGER = Logger.getLogger(BlockingManagerImpl.class.getName());
 
     /**
      * The blockers that are currently blocking the test runners.
@@ -194,7 +193,7 @@ public final class BlockingManagerImpl {
                 }
                 sb.append(bundle.getSymbolicName()).append("_").append(bundle.getVersion().toString()).append("\n");
             }
-            LOGGER.warn(sb.toString());
+            LOGGER.warning(sb.toString());
         }
     }
 
@@ -221,7 +220,7 @@ public final class BlockingManagerImpl {
             });
             blockingManagerThread.start();
         } else {
-            LOGGER.warn("Trying to start an already started BlockingManager");
+            LOGGER.warning("Trying to start an already started BlockingManager");
         }
     }
 
@@ -233,7 +232,7 @@ public final class BlockingManagerImpl {
             }
             blockingManagerThread.interrupt();
         } else {
-            LOGGER.warn("Stop called on Test Runner BlockingManager while it was already stopped");
+            LOGGER.warning("Stop called on Test Runner BlockingManager while it was already stopped");
         }
 
     }
@@ -250,7 +249,7 @@ public final class BlockingManagerImpl {
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                LOGGER.error("Test running waiting was interrupted");
+                LOGGER.severe("Test running waiting was interrupted");
                 stop();
                 return false;
             }

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.engine.TestEngine;
@@ -35,8 +36,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, TestEngine> implements
         TestRunnerEngineTracker {
@@ -44,7 +43,7 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, T
     /**
      * Logger.
      */
-    private static Logger LOGGER = LoggerFactory.getLogger(TestRunnerEngineServiceTracker.class);
+    private static Logger LOGGER = Logger.getLogger(TestRunnerEngineServiceTracker.class.getName());
 
     private BundleContext bundleContext;
 
@@ -67,14 +66,14 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, T
     public TestEngine addingService(final ServiceReference<TestEngine> reference) {
         Object engineType = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if (engineType == null) {
-            LOGGER.warn("Registered test runner service did not have "
+            LOGGER.warning("Registered test runner service did not have "
                     + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
                     + " service property attached. Service will not be used even if service properties are"
                     + " modified later: " + reference.toString());
             return null;
         }
         if (!(engineType instanceof String)) {
-            LOGGER.warn("Service property " + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
+            LOGGER.warning("Service property " + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
                     + " of registered test runner service has a different type than String therefore it will be"
                     + " ignored even if the service property is changed later: " + reference.toString());
             return null;

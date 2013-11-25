@@ -34,6 +34,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -51,8 +53,6 @@ import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.engine.TestCaseResult;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.osgi.framework.ServiceReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -66,7 +66,7 @@ public final class ResultUtil {
     /**
      * The logger of the class.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResultUtil.class);
+    private static final Logger LOGGER = Logger.getLogger(ResultUtil.class.getName());
 
     /**
      * The number that should be used to get the seconds from a millisec based value during a diviation.
@@ -168,11 +168,11 @@ public final class ResultUtil {
             transformer.transform(source, xmlResult);
             writer.flush();
         } catch (TransformerConfigurationException e) {
-            LOGGER.error("Error during dumping test results in XML format", e);
+            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
         } catch (TransformerException e) {
-            LOGGER.error("Error during dumping test results in XML format", e);
+            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
         } catch (IOException e) {
-            LOGGER.error("Error during dumping test results in XML format", e);
+            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
         }
     }
 
@@ -256,7 +256,7 @@ public final class ResultUtil {
             }
             return testSuiteElement;
         } catch (ParserConfigurationException e) {
-            LOGGER.error("Error generating test suite node", e);
+            LOGGER.log(Level.SEVERE, "Error generating test suite node", e);
         }
         return null;
     }
@@ -324,15 +324,15 @@ public final class ResultUtil {
             javax.xml.transform.Result xmlResult = new StreamResult(file);
             transformer.transform(source, xmlResult);
         } catch (ParserConfigurationException e) {
-            LOGGER.error("Error during dumping test results in XML format", e);
+            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
         } catch (SAXException e) {
-            LOGGER.error("Error during dumping test results in XML format", e);
+            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
         } catch (IOException e) {
-            LOGGER.error("Error during dumping test results in XML format", e);
+            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
         } catch (TransformerConfigurationException e) {
-            LOGGER.error("Error during dumping test results in XML format", e);
+            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
         } catch (TransformerException e) {
-            LOGGER.error("Error during dumping test results in XML format", e);
+            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
         }
     }
 
