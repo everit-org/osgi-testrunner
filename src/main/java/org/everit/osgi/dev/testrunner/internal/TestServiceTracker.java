@@ -24,6 +24,7 @@ package org.everit.osgi.dev.testrunner.internal;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,7 +94,7 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
                 try {
                     ResultUtil.writeTextResultToFile(testClassResult, testId, textFile, true);
                 } catch (IOException e) {
-                    LOGGER.log(Level.SEVERE, 
+                    LOGGER.log(Level.SEVERE,
                             "Error during text test result " + testClassResult.toString() + " to file "
                                     + textFile.getAbsolutePath(), e);
                 }
@@ -103,7 +104,10 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
                 ResultUtil.writeXmlResultToFile(testClassResult, xmlFile, testId, true);
             }
             try {
-                ResultUtil.dumpTextResult(testClassResult, testId, new PrintWriter(System.out));
+                StringWriter sw = new StringWriter();
+                sw.write("\n");
+                ResultUtil.dumpTextResult(testClassResult, testId, sw);
+                LOGGER.info(sw.toString());
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Error dumping text result to standard output", e);
             }
