@@ -29,7 +29,10 @@ import java.lang.annotation.Target;
 /**
  * With this annotation the test runner will pick up all method of the class even if the environment is started in
  * development mode.
+ * 
+ * @deprecated Use {@link TestDuringDevelopment} instead.
  */
+@Deprecated
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
 public @interface TestClassInDevelopmentMode {
