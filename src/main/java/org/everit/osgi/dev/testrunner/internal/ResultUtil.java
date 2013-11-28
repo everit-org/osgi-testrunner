@@ -122,8 +122,9 @@ public final class ResultUtil {
      */
     public static void dumpTextResult(final TestClassResult testClassResult, final String testId, final Writer writer)
             throws IOException {
+        String testClassName = testClassResult.getClassName();
         writer.write("-------------------------------------------------------------------------------\n");
-        writer.write("Test set: " + testClassResult.getClassName() + (testId != null ? " (" + testId + ")" : "") + "\n");
+        writer.write("Test set: " + testClassName + (testId != null ? " (" + testId + ")" : "") + "\n");
         writer.write("-------------------------------------------------------------------------------\n");
         writer.write("Tests run: " + testClassResult.getRunCount() + ", Failures: " + testClassResult.getFailureCount()
                 + ", Errors: " + testClassResult.getErrorCount() + ", Skipped: " + testClassResult.getIgnoreCount()
@@ -137,7 +138,7 @@ public final class ResultUtil {
         for (TestCaseResult testCaseResult : testClassResult.getTestCaseResults()) {
             if (testCaseResult.getFailure() != null) {
                 Throwable failure = testCaseResult.getFailure();
-                writer.write(testCaseResult.getMethodName() + "  Time elapsed: "
+                writer.write(testCaseResult.getTestMethodName() + "  Time elapsed: "
                         + ResultUtil.convertTimeToString(testCaseResult.getRunningTime()) + " sec  <<< "
                         + ((failure instanceof AssertionError) ? "FAILURE" : "ERROR") + "!" + "\n");
 
@@ -230,7 +231,7 @@ public final class ResultUtil {
                     testCaseElement.setAttribute("time",
                             ResultUtil.convertTimeToString(testCaseResult.getRunningTime()));
                     testCaseElement.setAttribute("classname", testClassResult.getClassName());
-                    testCaseElement.setAttribute("name", testCaseResult.getMethodName());
+                    testCaseElement.setAttribute("name", testCaseResult.getTestMethodName());
                     if (testCaseResult.getFailure() != null) {
                         Throwable failure = testCaseResult.getFailure();
                         Element errorElement = null;
@@ -276,7 +277,6 @@ public final class ResultUtil {
         FileOutputStream fout = new FileOutputStream(file, append);
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout, "UTF8"));
         try {
-            ;
             if (existed && append) {
                 bw.write("\n\n");
             }

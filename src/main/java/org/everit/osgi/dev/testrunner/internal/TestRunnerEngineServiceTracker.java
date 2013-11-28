@@ -43,7 +43,7 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, T
     /**
      * Logger.
      */
-    private static Logger LOGGER = Logger.getLogger(TestRunnerEngineServiceTracker.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TestRunnerEngineServiceTracker.class.getName());
 
     private BundleContext bundleContext;
 

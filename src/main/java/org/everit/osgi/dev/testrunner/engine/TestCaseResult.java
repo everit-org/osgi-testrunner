@@ -30,7 +30,7 @@ public class TestCaseResult {
      */
     private final Long finishTime;
 
-    private final String methodName;
+    private final String testMethodName;
 
     /**
      * The starting time of the TestCase.
@@ -43,8 +43,9 @@ public class TestCaseResult {
      * @param startTime
      *            The time when the TestCase was started.
      */
-    public TestCaseResult(final String methodName, final Long startTime, final Long finishTime, final Throwable failure) {
-        this.methodName = methodName;
+    public TestCaseResult(final String testMethodName, final Long startTime, final Long finishTime,
+            final Throwable failure) {
+        this.testMethodName = testMethodName;
         this.startTime = startTime;
         this.finishTime = finishTime;
         this.failure = failure;
@@ -56,10 +57,6 @@ public class TestCaseResult {
 
     public Long getFinishTime() {
         return finishTime;
-    }
-
-    public String getMethodName() {
-        return methodName;
     }
 
     /**
@@ -79,9 +76,14 @@ public class TestCaseResult {
         return startTime;
     }
 
+    public String getTestMethodName() {
+        return testMethodName;
+    }
+
     @Override
     public String toString() {
-        return "TestCaseResult [methodName=" + methodName + ", startTime=" + startTime + ", finishTime=" + finishTime
+        return "TestCaseResult [methodName=" + testMethodName + ", startTime=" + startTime + ", finishTime="
+                + finishTime
                 + ", failure=" + failure + ", running time=" + getRunningTime() + "ms]";
     }
 

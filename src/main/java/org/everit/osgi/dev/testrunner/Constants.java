@@ -21,8 +21,6 @@ package org.everit.osgi.dev.testrunner;
  * MA 02110-1301  USA
  */
 
-import java.util.HashSet;
-import java.util.Set;
 
 public final class Constants {
 
@@ -35,7 +33,7 @@ public final class Constants {
     /**
      * Environment variable that indicates that the framework should be stopped after running the tests.
      */
-    public static String ENV_STOP_AFTER_TESTS = "EOSGI_STOP_AFTER_TESTS";
+    public static final String ENV_STOP_AFTER_TESTS = "EOSGI_STOP_AFTER_TESTS";
 
     /**
      * The name of the Environment Variable that points to the folder where TEXT and XML based test results should be
@@ -47,12 +45,12 @@ public final class Constants {
      * Optional property for test services. The property must be available if multiple tests are registered as OSGi
      * service based on the same interface.
      */
-    public static String SERVICE_PROPERTY_TEST_ID = "eosgi.testId";
+    public static final String SERVICE_PROPERTY_TEST_ID = "eosgi.testId";
 
     /**
      * Required service property for test services and test engine services.
      */
-    public static String SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE = "eosgi.testEngine";
+    public static final String SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE = "eosgi.testEngine";
 
     /**
      * The name of the file that is written if there is an error during system exit.
@@ -63,17 +61,6 @@ public final class Constants {
      * Constant of the MANIFEST header key to count expected number of tests per bundle.
      */
     public static final String HEADER_EXPECTED_NUMBER_OF_TESTS = "EOSGi-TestNum";
-
-    /**
-     * The name of non-daemon threads that are started by the system. These threads do not have to be interrupted before
-     * a system exit.
-     */
-    public static final Set<String> SYSTEM_NON_DAEMON_THREAD_NAMES;
-
-    static {
-        SYSTEM_NON_DAEMON_THREAD_NAMES = new HashSet<String>();
-        SYSTEM_NON_DAEMON_THREAD_NAMES.add("DestroyJavaVM");
-    }
 
     private Constants() {
         // Do nothing

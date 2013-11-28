@@ -41,7 +41,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
 
-public class TestServiceTracker extends ServiceTracker<Object, Object> {
+public final class TestServiceTracker extends ServiceTracker<Object, Object> {
 
     private static final Logger LOGGER = Logger.getLogger(TestServiceTracker.class.getName());
 
@@ -126,8 +126,10 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
         }
     }
 
-    private void dumpTestResults(final ServiceReference<Object> reference, final List<TestClassResult> testClassResults) {
-        String testId = ResultUtil.getTestIdFromReference(reference);
+    private void dumpTestResults(final ServiceReference<Object> testServiceReference,
+            final List<TestClassResult> testClassResults) {
+
+        String testId = ResultUtil.getTestIdFromReference(testServiceReference);
         for (TestClassResult testClassResult : testClassResults) {
             if (TEST_RESULT_FOLDER_FILE != null) {
                 String fileName =

@@ -72,9 +72,9 @@ public class TestNumShutdownBlockerImpl extends AbstractShutdownBlocker {
 
     private static final Logger LOGGER = Logger.getLogger(TestNumShutdownBlockerImpl.class.getName());
 
-    private int processedTestNum = 0;
+    private int processedTestNumSum = 0;
 
-    private int expectedTestNum = 0;
+    private int expectedTestNumSum = 0;
 
     private boolean blocking = false;
 
@@ -89,16 +89,16 @@ public class TestNumShutdownBlockerImpl extends AbstractShutdownBlocker {
 
     public void addProcessedTestNum(final int processedTestNum) {
         lock.lock();
-        this.processedTestNum += processedTestNum;
+        processedTestNumSum += processedTestNum;
         checkBlocking();
         lock.unlock();
     }
 
     private void checkBlocking() {
-        if (blocking && (expectedTestNum <= processedTestNum)) {
+        if (blocking && (expectedTestNumSum <= processedTestNumSum)) {
             notifyListenersAboutUnblock();
             blocking = false;
-        } else if (!blocking && (expectedTestNum > processedTestNum)) {
+        } else if (!blocking && (expectedTestNumSum > processedTestNumSum)) {
             notifyListenersAboutBlock();
             blocking = true;
         }
@@ -110,7 +110,7 @@ public class TestNumShutdownBlockerImpl extends AbstractShutdownBlocker {
 
     private void increaseExpectedTestNum(final int additionalExpectedTestNum) {
         lock.lock();
-        expectedTestNum += additionalExpectedTestNum;
+        expectedTestNumSum += additionalExpectedTestNum;
         checkBlocking();
         lock.unlock();
     }
@@ -118,8 +118,8 @@ public class TestNumShutdownBlockerImpl extends AbstractShutdownBlocker {
     @Override
     public void logBlockCauses(final StringBuilder sb) {
         lock.lock();
-        sb.append("  The expected number of tests currently is ").append(expectedTestNum).append(" while ")
-                .append(processedTestNum).append(" tests has been processed.");
+        sb.append("  The expected number of tests currently is ").append(expectedTestNumSum).append(" while ")
+                .append(processedTestNumSum).append(" tests has been processed.");
         lock.unlock();
     }
 
