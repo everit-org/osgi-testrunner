@@ -21,20 +21,21 @@ package org.everit.osgi.dev.testrunner.internal.blocking;
  * MA 02110-1301  USA
  */
 
-import org.everit.osgi.dev.testrunner.blocking.AbstractBlocker;
-import org.everit.osgi.dev.testrunner.blocking.Blocker;
+import org.everit.osgi.dev.testrunner.blocking.AbstractShutdownBlocker;
+import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
 
 /**
- * One of the main {@link Blocker}s of this technology that blocks test running until the framework bundle is started.
+ * One of the main {@link ShutdownBlocker}s of this technology that blocks test running until the framework bundle is
+ * started.
  */
-public class FrameworkBlockerImpl extends AbstractBlocker {
+public class FrameworkStartingShutdownBlockerImpl extends AbstractShutdownBlocker {
 
     /**
-     * Whether this {@link Blocker} currently blocks the {@link BlockingManager} or not.
+     * Whether this {@link ShutdownBlocker} currently blocks the {@link BlockingManager} or not.
      */
     private boolean blocking = false;
 
@@ -48,14 +49,14 @@ public class FrameworkBlockerImpl extends AbstractBlocker {
      */
     private FrameworkListener frameworkListener;
 
-    public FrameworkBlockerImpl(final BundleContext bundleContext) {
+    public FrameworkStartingShutdownBlockerImpl(final BundleContext bundleContext) {
         this.bundleContext = bundleContext;
     }
 
     @Override
     public void logBlockCauses(final StringBuilder sb) {
         if (blocking) {
-            sb.append("    Framework is not started yet");
+            sb.append("  Framework is not started yet");
         }
     }
 

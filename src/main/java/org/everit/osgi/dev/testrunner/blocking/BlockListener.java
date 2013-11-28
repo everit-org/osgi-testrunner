@@ -22,8 +22,8 @@ package org.everit.osgi.dev.testrunner.blocking;
  */
 
 /**
- * A {@link Blocker} can notify the {@link BlockingManager} that is should block or let starting the test runners via
- * this listener.
+ * A {@link ShutdownBlocker} can notify the {@link BlockingManager} that is should block or let starting the test
+ * runners via this listener.
  */
 public interface BlockListener {
 
@@ -33,7 +33,7 @@ public interface BlockListener {
     void block();
 
     /**
-     * The {@link BlockingManager} should start the test runners if no other {@link Blocker} blocks.
+     * The {@link BlockingManager} should start the test runners if no other {@link ShutdownBlocker} blocks.
      */
     void unblock();
 }

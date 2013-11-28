@@ -32,6 +32,14 @@ import org.osgi.framework.ServiceReference;
 public interface TestManager {
 
     /**
+     * Checking if the JVM is in development mode from the perspective of the test runner. By default, JVM is in
+     * development mode if the {@link Constants#ENV_STOP_AFTER_TESTS} environment variable is set to true.
+     * 
+     * @return The development mode flag.
+     */
+    boolean isInDevelopmentMode();
+
+    /**
      * Runs all tests that are found based on the service reference.
      * 
      * @param reference
@@ -52,12 +60,4 @@ public interface TestManager {
      *            The development
      */
     void setInDevelopmentMode(boolean inDevelopmentMode);
-
-    /**
-     * Checking if the JVM is in development mode from the perspective of the test runner. By default, JVM is in
-     * development mode if the {@link Constants#ENV_STOP_AFTER_TESTS} environment variable is set to true.
-     * 
-     * @return The development mode flag.
-     */
-    boolean isInDevelopmentMode();
 }

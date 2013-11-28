@@ -28,19 +28,18 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
-import org.everit.osgi.dev.testrunner.blocking.Blocker;
+import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
-import org.everit.osgi.dev.testrunner.internal.blocking.FrameworkBlockerImpl;
+import org.everit.osgi.dev.testrunner.internal.blocking.FrameworkStartingShutdownBlockerImpl;
+import org.everit.osgi.dev.testrunner.internal.blocking.RunnableThreadShutdownBlockerImpl;
+import org.everit.osgi.dev.testrunner.internal.util.ThreadUtil;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -75,20 +74,6 @@ public class TestRunnerActivator implements BundleActivator {
             this.resultFolder = resultFolder;
         }
 
-        private List<Thread> countBlockingThreads() {
-            List<Thread> result = new ArrayList<Thread>();
-            Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
-            for (Entry<Thread, StackTraceElement[]> threadAndStackTrace : allStackTraces.entrySet()) {
-                Thread thread = threadAndStackTrace.getKey();
-                if (!thread.isDaemon() && !Thread.State.TERMINATED.equals(thread.getState())
-                        && !thread.equals(Thread.currentThread())
-                        && !Constants.SYSTEM_NON_DAEMON_THREAD_NAMES.contains(thread.getName())) {
-                    result.add(thread);
-                }
-            }
-            return result;
-        }
-
         private void logShutdownBlockingThreadsError(final List<Thread> blockingThreads) {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
@@ -110,7 +95,7 @@ public class TestRunnerActivator implements BundleActivator {
                     logStackTrace(e, pw);
                 }
             }
-            System.out.print(sw.toString());
+            System.err.print(sw.toString());
             File resultFolderFile = new File(resultFolder, Constants.SYSTEM_EXIT_ERROR_FILE_NAME);
             FileOutputStream fout = null;
             try {
@@ -147,29 +132,18 @@ public class TestRunnerActivator implements BundleActivator {
 
         @Override
         public void run() {
-            synchronized (startupTestRunningWaiter) {
-                try {
-                    while (!startupTestsRan) {
-                        System.out.println("Starting to wait for test running");
-                        startupTestRunningWaiter.wait();
-                    }
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-
-            }
+            blockingManager.waitForNoBlockCause(0);
 
             stopFramework();
 
-            List<Thread> blockingThreads = countBlockingThreads();
+            List<Thread> blockingThreads = ThreadUtil.countDeamonThreads();
             boolean canBeStopped = blockingThreads.size() == 0;
             long threadBlockCheckStartTime = new Date().getTime();
             while (!canBeStopped) {
                 try {
                     final int stoppingWaitingPeriodInMs = 100;
                     Thread.sleep(stoppingWaitingPeriodInMs);
-                    blockingThreads = countBlockingThreads();
+                    blockingThreads = ThreadUtil.countDeamonThreads();
                     canBeStopped = blockingThreads.size() == 0;
                     if (!canBeStopped) {
                         long currentTime = new Date().getTime();
@@ -216,24 +190,24 @@ public class TestRunnerActivator implements BundleActivator {
      */
     private BlockingManagerImpl blockingManager;
 
-    private FrameworkBlockerImpl frameworkBlocker;
+    private FrameworkStartingShutdownBlockerImpl frameworkStartBlocker;
 
-    private ServiceRegistration<Blocker> frameworkBlockerSR;
+    private ServiceRegistration<ShutdownBlocker> frameworkStartBlockerSR;
 
     /**
      * The timeout while the test runner will wait for blocking threads before starting to interrupt them.
      */
     private int shutdownTimeout = Constants.DEFAULT_SHUTDOWN_TIMEOUT;
 
-    private Object startupTestRunningWaiter = new Object();
-
-    private volatile boolean startupTestsRan = false;
-
     private ServiceRegistration<TestManager> testManagerSR;
 
     private TestRunnerEngineServiceTracker testRunnerEngineServiceTracker;
 
     private TestServiceTracker testServiceTracker;
+
+    private RunnableThreadShutdownBlockerImpl runnableThreadBlocker;
+
+    private ServiceRegistration<ShutdownBlocker> runnableThreadBlockerSR;
 
     private Thread waitingTestsToRunThread;
 
@@ -242,9 +216,15 @@ public class TestRunnerActivator implements BundleActivator {
 
         String resultDumpFolder = System.getenv(Constants.ENV_TEST_RESULT_FOLDER);
 
-        frameworkBlocker = new FrameworkBlockerImpl(context);
-        frameworkBlocker.start();
-        frameworkBlockerSR = context.registerService(Blocker.class, frameworkBlocker, new Hashtable<String, Object>());
+        frameworkStartBlocker = new FrameworkStartingShutdownBlockerImpl(context);
+        frameworkStartBlocker.start();
+        frameworkStartBlockerSR =
+                context.registerService(ShutdownBlocker.class, frameworkStartBlocker, new Hashtable<String, Object>());
+
+        runnableThreadBlocker = new RunnableThreadShutdownBlockerImpl();
+        runnableThreadBlocker.start();
+        runnableThreadBlockerSR =
+                context.registerService(ShutdownBlocker.class, runnableThreadBlocker, new Hashtable<String, Object>());
 
         blockingManager = new BlockingManagerImpl(context);
         blockingManager.start();
@@ -259,15 +239,8 @@ public class TestRunnerActivator implements BundleActivator {
 
             @Override
             public void run() {
-                boolean testsCanBeStarted = blockingManager.waitForTestsToStart(0);
-                if (testsCanBeStarted) {
-                    testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager);
-                    testServiceTracker.open();
-                    startupTestsRan = true;
-                    synchronized (startupTestRunningWaiter) {
-                        startupTestRunningWaiter.notifyAll();
-                    }
-                }
+                testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager);
+                testServiceTracker.open();
             }
         });
         waitingTestsToRunThread.start();
@@ -293,12 +266,20 @@ public class TestRunnerActivator implements BundleActivator {
             blockingManager.stop();
         }
 
-        if (frameworkBlocker != null) {
-            frameworkBlocker.stop();
+        if (runnableThreadBlocker != null) {
+            runnableThreadBlocker.stop();
         }
 
-        if (frameworkBlockerSR != null) {
-            frameworkBlockerSR.unregister();
+        if (runnableThreadBlockerSR != null) {
+            runnableThreadBlockerSR.unregister();
+        }
+
+        if (frameworkStartBlocker != null) {
+            frameworkStartBlocker.stop();
+        }
+
+        if (frameworkStartBlockerSR != null) {
+            frameworkStartBlockerSR.unregister();
         }
         waitingTestsToRunThread.interrupt();
     }

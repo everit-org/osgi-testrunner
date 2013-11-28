@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
  * Helper class to be able to implement blocker easier. It handles the blockListeners in a standard way. The subclass of
  * this class should call {@link #notifyListenersAboutBlock()} and {@link #notifyListenersAboutUnblock().
  */
-public abstract class AbstractBlocker implements Blocker {
+public abstract class AbstractShutdownBlocker implements ShutdownBlocker {
 
     private boolean blocking = false;
 

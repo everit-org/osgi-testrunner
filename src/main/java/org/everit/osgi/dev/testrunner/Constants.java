@@ -47,12 +47,12 @@ public final class Constants {
      * Optional property for test services. The property must be available if multiple tests are registered as OSGi
      * service based on the same interface.
      */
-    public static String SERVICE_PROPERTY_TEST_ID = "osgitest.testId";
+    public static String SERVICE_PROPERTY_TEST_ID = "eosgi.testId";
 
     /**
      * Required service property for test services and test engine services.
      */
-    public static String SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE = "osgitest.testEngine";
+    public static String SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE = "eosgi.testEngine";
 
     /**
      * The name of the file that is written if there is an error during system exit.

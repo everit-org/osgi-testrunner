@@ -22,14 +22,18 @@ package org.everit.osgi.dev.testrunner.internal.blocking;
  */
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.blocking.BlockListener;
-import org.everit.osgi.dev.testrunner.blocking.Blocker;
+import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.internal.util.BundleUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -40,33 +44,40 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 /**
  * A manager that handles all the blocking causes why the tests should not start and starts them when there is no more
  * cause. Many technologies can have their starting process asynchronously. In that case technology based
- * {@link Blocker} implementations can monitor their state and notify the {@link BlockingManager} when the tests are
- * ready to run.
+ * {@link ShutdownBlocker} implementations can monitor their state and notify the {@link BlockingManager} when the tests
+ * are ready to run.
  */
 public final class BlockingManagerImpl {
 
-    private class BlockerServiceTrackerCustomizer implements ServiceTrackerCustomizer<Blocker, Blocker> {
+    private class BlockerServiceTrackerCustomizer implements ServiceTrackerCustomizer<ShutdownBlocker, ShutdownBlocker> {
 
-        private Map<Blocker, BlockListener> listenersByBlockers = new ConcurrentHashMap<Blocker, BlockListener>();
+        private Map<ShutdownBlocker, BlockListener> listenersByBlockers =
+                new ConcurrentHashMap<ShutdownBlocker, BlockListener>();
 
         @Override
-        public Blocker addingService(final ServiceReference<Blocker> reference) {
-            final Blocker blocker = bundleContext.getService(reference);
+        public ShutdownBlocker addingService(final ServiceReference<ShutdownBlocker> reference) {
+            final ShutdownBlocker blocker = bundleContext.getService(reference);
             BlockListener blockListener = new BlockListener() {
 
                 @Override
                 public void block() {
+                    activeBlockersLock.lock();
+
                     activeBlockers.put(blocker, true);
+
+                    activeBlockersLock.unlock();
                 }
 
                 @Override
                 public void unblock() {
+                    activeBlockersLock.lock();
+
                     activeBlockers.remove(blocker);
                     if (activeBlockers.size() == 0) {
-                        synchronized (testRunningWaiter) {
-                            testRunningWaiter.notifyAll();
-                        }
+                        activeBlockersEmptyCondition.signalAll();
                     }
+
+                    activeBlockersLock.unlock();
                 }
             };
             listenersByBlockers.put(blocker, blockListener);
@@ -76,16 +87,18 @@ public final class BlockingManagerImpl {
         }
 
         @Override
-        public void modifiedService(final ServiceReference<Blocker> reference, final Blocker service) {
+        public void modifiedService(final ServiceReference<ShutdownBlocker> reference, final ShutdownBlocker service) {
         }
 
         @Override
-        public void removedService(final ServiceReference<Blocker> reference, final Blocker blocker) {
+        public void removedService(final ServiceReference<ShutdownBlocker> reference, final ShutdownBlocker blocker) {
             BlockListener blockListener = listenersByBlockers.remove(blocker);
             if (blockListener != null) {
                 blocker.removeBlockListener(blockListener);
             }
+            activeBlockersLock.lock();
             activeBlockers.remove(blocker);
+            activeBlockersLock.unlock();
             bundleContext.ungetService(reference);
         }
 
@@ -114,9 +127,13 @@ public final class BlockingManagerImpl {
     /**
      * The blockers that are currently blocking the test runners.
      */
-    private Map<Blocker, Boolean> activeBlockers = new ConcurrentHashMap<Blocker, Boolean>();
+    private Map<ShutdownBlocker, Boolean> activeBlockers = new HashMap<ShutdownBlocker, Boolean>();
 
-    private ServiceTracker<Blocker, Blocker> blockerTracker;
+    private final ReentrantLock activeBlockersLock = new ReentrantLock();
+
+    private Condition activeBlockersEmptyCondition = activeBlockersLock.newCondition();
+
+    private ServiceTracker<ShutdownBlocker, ShutdownBlocker> blockerTracker;
 
     /**
      * The thread that starts waits for all block causes and starts the tests when there is no more cause. This has to
@@ -136,12 +153,6 @@ public final class BlockingManagerImpl {
     private AtomicBoolean stopped = new AtomicBoolean(true);
 
     /**
-     * Helper object to be able to wait until framework is launched and all blueprint bundles are either started or
-     * failed. Tests may run after these events happened.
-     */
-    private Object testRunningWaiter = new Object();
-
-    /**
      * Constructor of blocking manager.
      * 
      * @param bundleContext
@@ -153,7 +164,7 @@ public final class BlockingManagerImpl {
 
     private void logBlockCauses() {
         StringBuilder sb = new StringBuilder("Test running is blocked due to the following reasons:\n");
-        for (Blocker blocker : activeBlockers.keySet()) {
+        for (ShutdownBlocker blocker : activeBlockers.keySet()) {
             sb.append("Blocker").append(blocker.toString()).append("\n");
             blocker.logBlockCauses(sb);
         }
@@ -201,7 +212,7 @@ public final class BlockingManagerImpl {
 
         if (stopped.compareAndSet(true, false)) {
             blockerTracker =
-                    new ServiceTracker<Blocker, Blocker>(bundleContext, Blocker.class,
+                    new ServiceTracker<ShutdownBlocker, ShutdownBlocker>(bundleContext, ShutdownBlocker.class,
                             new BlockerServiceTrackerCustomizer());
             blockerTracker.open();
 
@@ -209,7 +220,7 @@ public final class BlockingManagerImpl {
 
                 @Override
                 public void run() {
-                    while (!stopped.get() && !waitForTestsToStart(BLOCKING_CAUSE_LOG_PERIOD)) {
+                    while (!stopped.get() && !waitForNoBlockCause(BLOCKING_CAUSE_LOG_PERIOD)) {
                         logBlockCauses();
                     }
 
@@ -227,9 +238,9 @@ public final class BlockingManagerImpl {
     public void stop() {
         if (stopped.compareAndSet(false, true)) {
             blockerTracker.close();
-            synchronized (testRunningWaiter) {
-                testRunningWaiter.notifyAll();
-            }
+            activeBlockersLock.lock();
+            activeBlockersEmptyCondition.signalAll();
+            activeBlockersLock.unlock();
             blockingManagerThread.interrupt();
         } else {
             LOGGER.warning("Stop called on Test Runner BlockingManager while it was already stopped");
@@ -237,24 +248,27 @@ public final class BlockingManagerImpl {
 
     }
 
-    public boolean waitForTestsToStart(final long timeout) {
-        synchronized (testRunningWaiter) {
-            try {
-                if (!stopped.get() && (activeBlockers.size() > 0)) {
-
-                    testRunningWaiter.wait(timeout);
+    public boolean waitForNoBlockCause(final long timeout) {
+        activeBlockersLock.lock();
+        try {
+            if (!stopped.get() && (activeBlockers.size() > 0)) {
+                if (timeout == 0) {
+                    activeBlockersEmptyCondition.await();
+                    return true;
+                } else {
+                    return activeBlockersEmptyCondition.await(timeout, TimeUnit.MILLISECONDS);
                 }
-                if ((activeBlockers.size() > 0) && !stopped.get()) {
-                    return false;
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                LOGGER.severe("Test running waiting was interrupted");
-                stop();
-                return false;
+            } else {
+                return true;
             }
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.severe("Test running waiting was interrupted");
+            stop();
+            return true;
+        } finally {
+            activeBlockersLock.unlock();
         }
-        return true;
     }
 }

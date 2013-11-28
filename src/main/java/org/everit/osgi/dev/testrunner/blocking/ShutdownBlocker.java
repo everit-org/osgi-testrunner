@@ -1,5 +1,9 @@
 package org.everit.osgi.dev.testrunner.blocking;
 
+import java.lang.Thread.State;
+
+import org.everit.osgi.dev.testrunner.Constants;
+
 /*
  * Copyright (c) 2011, Everit Kft.
  *
@@ -22,20 +26,22 @@ package org.everit.osgi.dev.testrunner.blocking;
  */
 
 /**
- * A Blocker can hold the tests from running. Many technologies do a set up on a new thread (e.g. Blueprint). In this
- * case a blocker has to be written for the {@link BlockingManager} so that it will not start running the tests until
- * all the technologies finished processing.
+ * When the JVM is started in the way that the {@link Constants#ENV_STOP_AFTER_TESTS} environment variable is set, the
+ * testrunner stops the JVM as soon as there is no thread that is in {@link State#RUNNABLE}. By implementing a
+ * {@link ShutdownBlocker}, it is possible to make the testrunner waiting a bit more. This can be useful when the JVM
+ * has to wait for pheripherials during startup.
  */
-public interface Blocker {
+public interface ShutdownBlocker {
 
     /**
-     * Adding a listener to the Blocker so it can notify the listener about blocking and unblocking.
+     * Adding a listener to the Blocker so it can notify the listener about blocking and unblocking. Normally at least
+     * there is one listener that is the test runner itself.
      */
     void addBlockListener(BlockListener blockListener);
 
     /**
      * The {@link BlockingManager} calls this function periodically to be able to log out the causes of the blocked
-     * tests. It is the decision of the implementor of the Blocker what information can be useful.
+     * tests.
      * 
      * @param sb
      *            The causes should be written into the {@link StringBuilder}. It is recommended to start every line
@@ -47,6 +53,7 @@ public interface Blocker {
      * Removing a blocking listener so it does not have to be notified anymore.
      * 
      * @param blockListener
+     *            The listener instance.
      */
     void removeBlockListener(BlockListener blockListener);
 }

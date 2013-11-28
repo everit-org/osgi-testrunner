@@ -23,22 +23,49 @@ package org.everit.osgi.dev.testrunner.internal;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
+import org.everit.osgi.dev.testrunner.blocking.AbstractShutdownBlocker;
+import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
 
 public class TestServiceTracker extends ServiceTracker<Object, Object> {
+
+    private static class ActiveTestShutdownBlocker extends AbstractShutdownBlocker {
+
+        private AtomicReference<ServiceReference<?>> activeTestReference = new AtomicReference<ServiceReference<?>>();
+
+        public void dropActiveTestReference() {
+            super.notifyListenersAboutUnblock();
+            activeTestReference.set(null);
+        }
+
+        @Override
+        public void logBlockCauses(final StringBuilder sb) {
+            ServiceReference<?> testReference = activeTestReference.get();
+            if (testReference != null) {
+                sb.append("  A test is running based on the reference: ").append(testReference).append("\n");
+            }
+        }
+
+        public void setActiveTestReference(final ServiceReference<?> testReference) {
+            activeTestReference.set(testReference);
+            super.notifyListenersAboutBlock();
+        }
+    }
 
     private static final Logger LOGGER = Logger.getLogger(TestServiceTracker.class.getName());
 
@@ -66,13 +93,19 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
 
     private final TestManager testManager;
 
+    private final ActiveTestShutdownBlocker activeTestShutdownBlocker;
+
+    private ServiceRegistration<ShutdownBlocker> activeTestShutdownBlockerSR;
+
     private TestServiceTracker(final BundleContext bundleContext, final TestManager testManager, final Filter filter) {
         super(bundleContext, filter, null);
         this.testManager = testManager;
+        activeTestShutdownBlocker = new ActiveTestShutdownBlocker();
     }
 
     @Override
     public Object addingService(final ServiceReference<Object> reference) {
+
         List<TestClassResult> testClassResults = testManager.runTest(reference, false);
         if (testClassResults != null) {
             dumpTestResults(reference, testClassResults);
@@ -81,6 +114,14 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
                     + reference.toString());
         }
         return null;
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        if (activeTestShutdownBlockerSR != null) {
+            activeTestShutdownBlockerSR.unregister();
+        }
     }
 
     private void dumpTestResults(final ServiceReference<Object> reference, final List<TestClassResult> testClassResults) {
@@ -94,9 +135,8 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
                 try {
                     ResultUtil.writeTextResultToFile(testClassResult, testId, textFile, true);
                 } catch (IOException e) {
-                    LOGGER.log(Level.SEVERE,
-                            "Error during text test result " + testClassResult.toString() + " to file "
-                                    + textFile.getAbsolutePath(), e);
+                    LOGGER.log(Level.SEVERE, "Error during text test result " + testClassResult.toString()
+                            + " to file " + textFile.getAbsolutePath(), e);
                 }
 
                 File xmlFile = new File(TEST_RESULT_FOLDER_FILE, fileName + ".xml");
@@ -117,6 +157,14 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
 
     @Override
     public void modifiedService(final ServiceReference<Object> reference, final Object service) {
+    }
+
+    @Override
+    public void open() {
+        activeTestShutdownBlockerSR =
+                context.registerService(ShutdownBlocker.class, activeTestShutdownBlocker,
+                        new Hashtable<String, Object>());
+        super.open();
     }
 
     @Override

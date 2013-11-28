@@ -21,7 +21,6 @@ package org.everit.osgi.dev.testrunner.internal;
  * MA 02110-1301  USA
  */
 
-import java.awt.GraphicsEnvironment;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,7 +36,7 @@ public class TestManagerImpl implements TestManager {
     private static final Logger LOGGER = Logger.getLogger(TestManagerImpl.class.getName());
 
     private final TestRunnerEngineTracker testRunnerEngineTracker;
-    
+
     private boolean inDevelopmentMode;
 
     public TestManagerImpl(final TestRunnerEngineTracker testRunnerEngineTracker) {
@@ -46,7 +45,12 @@ public class TestManagerImpl implements TestManager {
     }
 
     @Override
-    public List<TestClassResult> runTest(final ServiceReference<Object> reference, boolean force) {
+    public boolean isInDevelopmentMode() {
+        return inDevelopmentMode;
+    }
+
+    @Override
+    public List<TestClassResult> runTest(final ServiceReference<Object> reference, final boolean force) {
 
         Object engineTypeObject = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if ((engineTypeObject == null) || !(engineTypeObject instanceof String)) {
@@ -56,7 +60,6 @@ public class TestManagerImpl implements TestManager {
             return null;
         }
 
-        
         TestEngine runnerEngine = testRunnerEngineTracker.getEngineByType((String) engineTypeObject);
         if (runnerEngine == null) {
             LOGGER.log(Level.WARNING, "No test runner available for type '" + engineTypeObject + "'. Ignoring test: "
@@ -69,14 +72,9 @@ public class TestManagerImpl implements TestManager {
         return result;
 
     }
-    
+
     @Override
-    public void setInDevelopmentMode(boolean inDevelopmentMode) {
+    public void setInDevelopmentMode(final boolean inDevelopmentMode) {
         this.inDevelopmentMode = inDevelopmentMode;
-    }
-    
-    @Override
-    public boolean isInDevelopmentMode() {
-        return inDevelopmentMode;
     }
 }

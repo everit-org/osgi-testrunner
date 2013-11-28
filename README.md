@@ -13,10 +13,10 @@ Running OSGi tests
 The module picks up every OSGi service that has the following service
 properties defined:
 
- - **osgitest.testId**: This property should have a value that can be a
+ - **eosgi.testId**: This property should have a value that can be a
    part of a file name. 
 
- - **osgitest.testEngine**: This property defines which test engine the
+ - **eosgi.testEngine**: This property defines which test engine the
    test should be passed to. Currently there is a **junit4** implemented
    in the osgi-testrunner-junit4 project.
    
