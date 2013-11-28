@@ -66,14 +66,14 @@ public final class ThreadUtil {
         }
         return currentThreadGroup;
     }
-    
-    public static Thread[] getRunnableThreads(ThreadGroup threadGroup) {
+
+    public static Thread[] getRunnableThreads(final ThreadGroup threadGroup) {
         List<Thread> result = new ArrayList<Thread>();
         int activeCount = threadGroup.activeCount();
         Thread[] threads = new Thread[activeCount];
         threadGroup.enumerate(threads);
         for (Thread thread : threads) {
-            if (thread != null && State.RUNNABLE.equals(thread.getState())) {
+            if ((thread != null) && State.RUNNABLE.equals(thread.getState())) {
                 result.add(thread);
             }
         }

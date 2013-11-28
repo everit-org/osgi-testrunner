@@ -64,7 +64,6 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, T
 
     @Override
     public TestEngine addingService(final ServiceReference<TestEngine> reference) {
-        System.out.println("//// Test engine arrived " + reference.toString());
         Object engineType = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if (engineType == null) {
             LOGGER.warning("Registered test runner service did not have "

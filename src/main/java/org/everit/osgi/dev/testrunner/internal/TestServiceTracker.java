@@ -26,15 +26,14 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.Constants;
 import org.everit.osgi.dev.testrunner.TestManager;
-import org.everit.osgi.dev.testrunner.blocking.AbstractShutdownBlocker;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
+import org.everit.osgi.dev.testrunner.internal.blocking.TestNumShutdownBlockerImpl;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
@@ -43,29 +42,6 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
 
 public class TestServiceTracker extends ServiceTracker<Object, Object> {
-
-    private static class ActiveTestShutdownBlocker extends AbstractShutdownBlocker {
-
-        private AtomicReference<ServiceReference<?>> activeTestReference = new AtomicReference<ServiceReference<?>>();
-
-        public void dropActiveTestReference() {
-            super.notifyListenersAboutUnblock();
-            activeTestReference.set(null);
-        }
-
-        @Override
-        public void logBlockCauses(final StringBuilder sb) {
-            ServiceReference<?> testReference = activeTestReference.get();
-            if (testReference != null) {
-                sb.append("  A test is running based on the reference: ").append(testReference).append("\n");
-            }
-        }
-
-        public void setActiveTestReference(final ServiceReference<?> testReference) {
-            activeTestReference.set(testReference);
-            super.notifyListenersAboutBlock();
-        }
-    }
 
     private static final Logger LOGGER = Logger.getLogger(TestServiceTracker.class.getName());
 
@@ -81,10 +57,10 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
     }
 
     public static TestServiceTracker createTestServiceTracker(final BundleContext bundleContext,
-            final TestManager testManager) {
+            final TestManager testManager, final boolean startBlocker) {
         try {
             Filter filter = bundleContext.createFilter("(" + Constants.SERVICE_PROPERTY_TEST_ID + "=*)");
-            return new TestServiceTracker(bundleContext, testManager, filter);
+            return new TestServiceTracker(bundleContext, testManager, filter, startBlocker);
 
         } catch (InvalidSyntaxException e) {
             throw new RuntimeException("An exception is thrown that should never happen", e);
@@ -93,22 +69,38 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
 
     private final TestManager testManager;
 
-    private final ActiveTestShutdownBlocker activeTestShutdownBlocker;
-
     private ServiceRegistration<ShutdownBlocker> activeTestShutdownBlockerSR;
 
-    private TestServiceTracker(final BundleContext bundleContext, final TestManager testManager, final Filter filter) {
+    private final TestNumShutdownBlockerImpl testNumBlocker;
+
+    private ServiceRegistration<ShutdownBlocker> testNumBlockerSR;
+
+    private TestServiceTracker(final BundleContext bundleContext, final TestManager testManager, final Filter filter,
+            final boolean startNumBlocker) {
         super(bundleContext, filter, null);
         this.testManager = testManager;
-        activeTestShutdownBlocker = new ActiveTestShutdownBlocker();
+        if (startNumBlocker) {
+            testNumBlocker = new TestNumShutdownBlockerImpl(bundleContext);
+        } else {
+            testNumBlocker = null;
+        }
     }
 
     @Override
     public Object addingService(final ServiceReference<Object> reference) {
-
         List<TestClassResult> testClassResults = testManager.runTest(reference, false);
+
         if (testClassResults != null) {
             dumpTestResults(reference, testClassResults);
+
+            int sumTestNum = 0;
+            for (TestClassResult testClassResult : testClassResults) {
+                sumTestNum += testClassResult.getErrorCount() + testClassResult.getFailureCount()
+                        + testClassResult.getIgnoreCount() + testClassResult.getRunCount();
+            }
+            if (testNumBlocker != null) {
+                testNumBlocker.addProcessedTestNum(sumTestNum);
+            }
         } else {
             LOGGER.info("Tests for reference has no result. The cause should be in the log before this entry: "
                     + reference.toString());
@@ -121,6 +113,16 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
         super.close();
         if (activeTestShutdownBlockerSR != null) {
             activeTestShutdownBlockerSR.unregister();
+            activeTestShutdownBlockerSR = null;
+        }
+
+        if (testNumBlocker != null) {
+            testNumBlocker.close();
+        }
+
+        if (testNumBlockerSR != null) {
+            testNumBlockerSR.unregister();
+            testNumBlockerSR = null;
         }
     }
 
@@ -161,9 +163,12 @@ public class TestServiceTracker extends ServiceTracker<Object, Object> {
 
     @Override
     public void open() {
-        activeTestShutdownBlockerSR =
-                context.registerService(ShutdownBlocker.class, activeTestShutdownBlocker,
-                        new Hashtable<String, Object>());
+        if (testNumBlocker != null) {
+            testNumBlockerSR = context.registerService(ShutdownBlocker.class, testNumBlocker,
+                    new Hashtable<String, Object>());
+            testNumBlocker.open();
+        }
+
         super.open();
     }
 

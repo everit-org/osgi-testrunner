@@ -60,6 +60,11 @@ public final class Constants {
     public static final String SYSTEM_EXIT_ERROR_FILE_NAME = "system-exit-error.txt";
 
     /**
+     * Constant of the MANIFEST header key to count expected number of tests per bundle.
+     */
+    public static final String HEADER_EXPECTED_NUMBER_OF_TESTS = "EOSGi-TestNum";
+
+    /**
      * The name of non-daemon threads that are started by the system. These threads do not have to be interrupted before
      * a system exit.
      */

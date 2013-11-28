@@ -38,7 +38,6 @@ import org.everit.osgi.dev.testrunner.TestManager;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
 import org.everit.osgi.dev.testrunner.internal.blocking.FrameworkStartingShutdownBlockerImpl;
-import org.everit.osgi.dev.testrunner.internal.blocking.RunnableThreadShutdownBlockerImpl;
 import org.everit.osgi.dev.testrunner.internal.util.ThreadUtil;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -205,29 +204,14 @@ public class TestRunnerActivator implements BundleActivator {
 
     private TestServiceTracker testServiceTracker;
 
-    private RunnableThreadShutdownBlockerImpl runnableThreadBlocker;
-
     private ServiceRegistration<ShutdownBlocker> runnableThreadBlockerSR;
 
-    private Thread waitingTestsToRunThread;
+    private Thread testRunnerThread;
 
     @Override
     public void start(final BundleContext context) throws Exception {
 
         String resultDumpFolder = System.getenv(Constants.ENV_TEST_RESULT_FOLDER);
-
-        frameworkStartBlocker = new FrameworkStartingShutdownBlockerImpl(context);
-        frameworkStartBlocker.start();
-        frameworkStartBlockerSR =
-                context.registerService(ShutdownBlocker.class, frameworkStartBlocker, new Hashtable<String, Object>());
-
-        runnableThreadBlocker = new RunnableThreadShutdownBlockerImpl();
-        runnableThreadBlocker.start();
-        runnableThreadBlockerSR =
-                context.registerService(ShutdownBlocker.class, runnableThreadBlocker, new Hashtable<String, Object>());
-
-        blockingManager = new BlockingManagerImpl(context);
-        blockingManager.start();
 
         testRunnerEngineServiceTracker = new TestRunnerEngineServiceTracker(context);
         testRunnerEngineServiceTracker.open();
@@ -235,18 +219,31 @@ public class TestRunnerActivator implements BundleActivator {
         final TestManagerImpl testManager = new TestManagerImpl(testRunnerEngineServiceTracker);
         testManagerSR = context.registerService(TestManager.class, testManager, new Hashtable<String, Object>());
 
-        waitingTestsToRunThread = new Thread(new Runnable() {
+        String stopAfterTests = System.getenv(Constants.ENV_STOP_AFTER_TESTS);
+        final boolean shutdownAfterTests = Boolean.parseBoolean(stopAfterTests);
+
+        testRunnerThread = new Thread(new Runnable() {
 
             @Override
             public void run() {
-                testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager);
+                testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager,
+                        shutdownAfterTests);
                 testServiceTracker.open();
             }
         });
-        waitingTestsToRunThread.start();
+        testRunnerThread.setDaemon(false);
+        testRunnerThread.start();
 
-        String stopAfterTests = System.getenv(Constants.ENV_STOP_AFTER_TESTS);
-        if (Boolean.parseBoolean(stopAfterTests)) {
+        if (shutdownAfterTests) {
+            frameworkStartBlocker = new FrameworkStartingShutdownBlockerImpl(context);
+            frameworkStartBlocker.start();
+            frameworkStartBlockerSR =
+                    context.registerService(ShutdownBlocker.class, frameworkStartBlocker,
+                            new Hashtable<String, Object>());
+
+            blockingManager = new BlockingManagerImpl(context);
+            blockingManager.start();
+
             new TestFinalizationWaitingShutdownThread(context, resultDumpFolder).start();
         }
     }
@@ -266,10 +263,6 @@ public class TestRunnerActivator implements BundleActivator {
             blockingManager.stop();
         }
 
-        if (runnableThreadBlocker != null) {
-            runnableThreadBlocker.stop();
-        }
-
         if (runnableThreadBlockerSR != null) {
             runnableThreadBlockerSR.unregister();
         }
@@ -281,6 +274,6 @@ public class TestRunnerActivator implements BundleActivator {
         if (frameworkStartBlockerSR != null) {
             frameworkStartBlockerSR.unregister();
         }
-        waitingTestsToRunThread.interrupt();
+        testRunnerThread.interrupt();
     }
 }
