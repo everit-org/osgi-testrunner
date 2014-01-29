@@ -25,6 +25,7 @@
     <artifactId>org.everit.config.oss</artifactId>
     <version>5.0.0</version>
   </parent>
+
   <groupId>org.everit.osgi.dev</groupId>
   <artifactId>org.everit.osgi.dev.testrunner</artifactId>
   <version>4.0.0</version>
