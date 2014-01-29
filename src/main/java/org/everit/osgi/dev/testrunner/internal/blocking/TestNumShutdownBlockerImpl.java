@@ -1,26 +1,27 @@
 /**
- * This file is part of OSGi Test Runner Bundle.
+ * This file is part of Everit Test Runner Bundle.
  *
- * OSGi Test Runner Bundle is free software: you can redistribute it and/or modify
+ * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * OSGi Test Runner Bundle is distributed in the hope that it will be useful,
+ * Everit Test Runner Bundle is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OSGi Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.everit.osgi.dev.testrunner.internal.blocking;
+
 import java.util.Dictionary;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
-import org.everit.osgi.dev.testrunner.Constants;
+import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.blocking.AbstractShutdownBlocker;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -38,13 +39,13 @@ public class TestNumShutdownBlockerImpl extends AbstractShutdownBlocker {
         @Override
         public Bundle addingBundle(final Bundle bundle, final BundleEvent event) {
             Dictionary<String, String> bundleHeaders = bundle.getHeaders();
-            String expectedTestNumString = bundleHeaders.get(Constants.HEADER_EXPECTED_NUMBER_OF_TESTS);
+            String expectedTestNumString = bundleHeaders.get(TestRunnerConstants.HEADER_EXPECTED_NUMBER_OF_TESTS);
             if (expectedTestNumString != null) {
                 try {
                     int exptectedTestNum = Integer.parseInt(expectedTestNumString);
                     increaseExpectedTestNum(exptectedTestNum);
                 } catch (NumberFormatException e) {
-                    LOGGER.warning("The value of " + Constants.HEADER_EXPECTED_NUMBER_OF_TESTS
+                    LOGGER.warning("The value of " + TestRunnerConstants.HEADER_EXPECTED_NUMBER_OF_TESTS
                             + " header in the bundle '" + bundle.toString() + "' is invalid.");
                     e.printStackTrace();
                 }

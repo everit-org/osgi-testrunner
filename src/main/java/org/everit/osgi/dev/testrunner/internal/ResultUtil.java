@@ -1,20 +1,21 @@
 /**
- * This file is part of OSGi Test Runner Bundle.
+ * This file is part of Everit Test Runner Bundle.
  *
- * OSGi Test Runner Bundle is free software: you can redistribute it and/or modify
+ * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * OSGi Test Runner Bundle is distributed in the hope that it will be useful,
+ * Everit Test Runner Bundle is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OSGi Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.everit.osgi.dev.testrunner.internal;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,7 +44,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.everit.osgi.dev.testrunner.Constants;
+import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.engine.TestCaseResult;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.osgi.framework.ServiceReference;
@@ -257,7 +258,7 @@ public final class ResultUtil {
     }
 
     public static String getTestIdFromReference(final ServiceReference<?> reference) {
-        Object testIdProp = reference.getProperty(Constants.SERVICE_PROPERTY_TEST_ID);
+        Object testIdProp = reference.getProperty(TestRunnerConstants.SERVICE_PROPERTY_TEST_ID);
         if ((testIdProp != null) && (testIdProp instanceof String)) {
             return (String) testIdProp;
         } else {

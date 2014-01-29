@@ -1,20 +1,21 @@
 /**
- * This file is part of OSGi Test Runner Bundle.
+ * This file is part of Everit Test Runner Bundle.
  *
- * OSGi Test Runner Bundle is free software: you can redistribute it and/or modify
+ * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * OSGi Test Runner Bundle is distributed in the hope that it will be useful,
+ * Everit Test Runner Bundle is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OSGi Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.everit.osgi.dev.testrunner.internal;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -27,7 +28,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.everit.osgi.dev.testrunner.Constants;
+import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.TestManager;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
@@ -89,7 +90,7 @@ public class TestRunnerActivator implements BundleActivator {
                 }
             }
             System.err.print(sw.toString());
-            File resultFolderFile = new File(resultFolder, Constants.SYSTEM_EXIT_ERROR_FILE_NAME);
+            File resultFolderFile = new File(resultFolder, TestRunnerConstants.SYSTEM_EXIT_ERROR_FILE_NAME);
             FileOutputStream fout = null;
             try {
                 fout = new FileOutputStream(resultFolderFile);
@@ -190,7 +191,7 @@ public class TestRunnerActivator implements BundleActivator {
     /**
      * The timeout while the test runner will wait for blocking threads before starting to interrupt them.
      */
-    private int shutdownTimeout = Constants.DEFAULT_SHUTDOWN_TIMEOUT;
+    private int shutdownTimeout = TestRunnerConstants.DEFAULT_SHUTDOWN_TIMEOUT;
 
     private ServiceRegistration<TestManager> testManagerSR;
 
@@ -205,7 +206,7 @@ public class TestRunnerActivator implements BundleActivator {
     @Override
     public void start(final BundleContext context) throws Exception {
 
-        String resultDumpFolder = System.getenv(Constants.ENV_TEST_RESULT_FOLDER);
+        String resultDumpFolder = System.getenv(TestRunnerConstants.ENV_TEST_RESULT_FOLDER);
 
         testRunnerEngineServiceTracker = new TestRunnerEngineServiceTracker(context);
         testRunnerEngineServiceTracker.open();
@@ -213,7 +214,7 @@ public class TestRunnerActivator implements BundleActivator {
         final TestManagerImpl testManager = new TestManagerImpl(testRunnerEngineServiceTracker);
         testManagerSR = context.registerService(TestManager.class, testManager, new Hashtable<String, Object>());
 
-        String stopAfterTests = System.getenv(Constants.ENV_STOP_AFTER_TESTS);
+        String stopAfterTests = System.getenv(TestRunnerConstants.ENV_STOP_AFTER_TESTS);
         final boolean shutdownAfterTests = Boolean.parseBoolean(stopAfterTests);
 
         testRunnerThread = new Thread(new Runnable() {

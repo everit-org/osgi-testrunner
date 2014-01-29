@@ -1,20 +1,21 @@
 /**
- * This file is part of OSGi Test Runner Bundle.
+ * This file is part of Everit Test Runner Bundle.
  *
- * OSGi Test Runner Bundle is free software: you can redistribute it and/or modify
+ * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * OSGi Test Runner Bundle is distributed in the hope that it will be useful,
+ * Everit Test Runner Bundle is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OSGi Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.everit.osgi.dev.testrunner.internal;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Logger;
 
-import org.everit.osgi.dev.testrunner.Constants;
+import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.engine.TestEngine;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -58,16 +59,16 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, T
 
     @Override
     public TestEngine addingService(final ServiceReference<TestEngine> reference) {
-        Object engineType = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
+        Object engineType = reference.getProperty(TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if (engineType == null) {
             LOGGER.warning("Registered test runner service did not have "
-                    + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
+                    + TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
                     + " service property attached. Service will not be used even if service properties are"
                     + " modified later: " + reference.toString());
             return null;
         }
         if (!(engineType instanceof String)) {
-            LOGGER.warning("Service property " + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
+            LOGGER.warning("Service property " + TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
                     + " of registered test runner service has a different type than String therefore it will be"
                     + " ignored even if the service property is changed later: " + reference.toString());
             return null;
@@ -110,7 +111,7 @@ public class TestRunnerEngineServiceTracker extends ServiceTracker<TestEngine, T
 
     @Override
     public void removedService(final ServiceReference<TestEngine> reference, final TestEngine service) {
-        Object engineType = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
+        Object engineType = reference.getProperty(TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         String testEngine = (String) engineType;
 
         WriteLock writeLock = mapRWLock.writeLock();

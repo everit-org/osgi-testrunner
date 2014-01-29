@@ -1,20 +1,21 @@
 /**
- * This file is part of OSGi Test Runner Bundle.
+ * This file is part of Everit Test Runner Bundle.
  *
- * OSGi Test Runner Bundle is free software: you can redistribute it and/or modify
+ * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * OSGi Test Runner Bundle is distributed in the hope that it will be useful,
+ * Everit Test Runner Bundle is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OSGi Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.everit.osgi.dev.testrunner.internal;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -23,7 +24,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.everit.osgi.dev.testrunner.Constants;
+import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.TestManager;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
@@ -42,7 +43,7 @@ public final class TestServiceTracker extends ServiceTracker<Object, Object> {
     private static final File TEST_RESULT_FOLDER_FILE;
 
     static {
-        String testResultFolder = System.getenv(Constants.ENV_TEST_RESULT_FOLDER);
+        String testResultFolder = System.getenv(TestRunnerConstants.ENV_TEST_RESULT_FOLDER);
         if (testResultFolder != null) {
             TEST_RESULT_FOLDER_FILE = new File(testResultFolder);
         } else {
@@ -53,7 +54,7 @@ public final class TestServiceTracker extends ServiceTracker<Object, Object> {
     public static TestServiceTracker createTestServiceTracker(final BundleContext bundleContext,
             final TestManager testManager, final boolean startBlocker) {
         try {
-            Filter filter = bundleContext.createFilter("(" + Constants.SERVICE_PROPERTY_TEST_ID + "=*)");
+            Filter filter = bundleContext.createFilter("(" + TestRunnerConstants.SERVICE_PROPERTY_TEST_ID + "=*)");
             return new TestServiceTracker(bundleContext, testManager, filter, startBlocker);
 
         } catch (InvalidSyntaxException e) {

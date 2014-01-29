@@ -1,25 +1,26 @@
 /**
- * This file is part of OSGi Test Runner Bundle.
+ * This file is part of Everit Test Runner Bundle.
  *
- * OSGi Test Runner Bundle is free software: you can redistribute it and/or modify
+ * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * OSGi Test Runner Bundle is distributed in the hope that it will be useful,
+ * Everit Test Runner Bundle is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OSGi Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.everit.osgi.dev.testrunner.internal;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.everit.osgi.dev.testrunner.Constants;
+import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.TestManager;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.everit.osgi.dev.testrunner.engine.TestEngine;
@@ -35,7 +36,7 @@ public class TestManagerImpl implements TestManager {
 
     public TestManagerImpl(final TestRunnerEngineTracker testRunnerEngineTracker) {
         this.testRunnerEngineTracker = testRunnerEngineTracker;
-        inDevelopmentMode = !Boolean.parseBoolean(System.getenv(Constants.ENV_STOP_AFTER_TESTS));
+        inDevelopmentMode = !Boolean.parseBoolean(System.getenv(TestRunnerConstants.ENV_STOP_AFTER_TESTS));
     }
 
     @Override
@@ -46,9 +47,9 @@ public class TestManagerImpl implements TestManager {
     @Override
     public List<TestClassResult> runTest(final ServiceReference<Object> reference, final boolean force) {
 
-        Object engineTypeObject = reference.getProperty(Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
+        Object engineTypeObject = reference.getProperty(TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE);
         if ((engineTypeObject == null) || !(engineTypeObject instanceof String)) {
-            LOGGER.log(Level.WARNING, "Unrecognized '" + Constants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
+            LOGGER.log(Level.WARNING, "Unrecognized '" + TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE
                     + "' service property value for test. Are you sure the test engine is available? Ignoring: "
                     + reference.toString());
             return null;
