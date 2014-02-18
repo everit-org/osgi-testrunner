@@ -28,7 +28,7 @@
 
   <groupId>org.everit.osgi.dev</groupId>
   <artifactId>org.everit.osgi.dev.testrunner</artifactId>
-  <version>4.0.0</version>
+  <version>4.0.1</version>
 
   <packaging>bundle</packaging>
 

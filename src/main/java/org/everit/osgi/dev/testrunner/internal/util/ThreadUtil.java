@@ -23,7 +23,7 @@ import java.util.Map.Entry;
 
 public final class ThreadUtil {
 
-    public static List<Thread> countDeamonThreads() {
+    public List<Thread> countDeamonThreads() {
         List<Thread> result = new ArrayList<Thread>();
         Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
         for (Entry<Thread, StackTraceElement[]> threadAndStackTrace : allStackTraces.entrySet()) {
@@ -35,9 +35,6 @@ public final class ThreadUtil {
             }
         }
         return result;
-    }
-
-    private ThreadUtil() {
     }
 
 }

@@ -28,8 +28,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.TestManager;
+import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
 import org.everit.osgi.dev.testrunner.internal.blocking.FrameworkStartingShutdownBlockerImpl;
@@ -127,17 +127,18 @@ public class TestRunnerActivator implements BundleActivator {
         @Override
         public void run() {
             blockingManager.waitForNoBlockCause(0);
+            ThreadUtil threadUtil = new ThreadUtil();
 
             stopFramework();
 
-            List<Thread> blockingThreads = ThreadUtil.countDeamonThreads();
+            List<Thread> blockingThreads = threadUtil.countDeamonThreads();
             boolean canBeStopped = blockingThreads.size() == 0;
             long threadBlockCheckStartTime = new Date().getTime();
             while (!canBeStopped) {
                 try {
                     final int stoppingWaitingPeriodInMs = 100;
                     Thread.sleep(stoppingWaitingPeriodInMs);
-                    blockingThreads = ThreadUtil.countDeamonThreads();
+                    blockingThreads = threadUtil.countDeamonThreads();
                     canBeStopped = blockingThreads.size() == 0;
                     if (!canBeStopped) {
                         long currentTime = new Date().getTime();
@@ -188,6 +189,8 @@ public class TestRunnerActivator implements BundleActivator {
 
     private ServiceRegistration<ShutdownBlocker> frameworkStartBlockerSR;
 
+    private ServiceRegistration<ShutdownBlocker> runnableThreadBlockerSR;
+
     /**
      * The timeout while the test runner will wait for blocking threads before starting to interrupt them.
      */
@@ -197,11 +200,9 @@ public class TestRunnerActivator implements BundleActivator {
 
     private TestRunnerEngineServiceTracker testRunnerEngineServiceTracker;
 
-    private TestServiceTracker testServiceTracker;
-
-    private ServiceRegistration<ShutdownBlocker> runnableThreadBlockerSR;
-
     private Thread testRunnerThread;
+
+    private TestServiceTracker testServiceTracker;
 
     @Override
     public void start(final BundleContext context) throws Exception {
