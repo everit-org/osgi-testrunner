@@ -55,12 +55,12 @@ public class TestRunnerActivator implements BundleActivator {
         /**
          * The context of the testrunner bundle.
          */
-        private BundleContext context;
+        private final BundleContext context;
 
         /**
          * The folder where the {@link TestRunnerActivator#SYSTEM_EXIT_ERROR_FILE_NAME} file will be written.
          */
-        private String resultFolder;
+        private final String resultFolder;
 
         public TestFinalizationWaitingShutdownThread(final BundleContext context, final String resultFolder) {
             super();
@@ -194,13 +194,11 @@ public class TestRunnerActivator implements BundleActivator {
     /**
      * The timeout while the test runner will wait for blocking threads before starting to interrupt them.
      */
-    private int shutdownTimeout = TestRunnerConstants.DEFAULT_SHUTDOWN_TIMEOUT;
+    private final int shutdownTimeout = TestRunnerConstants.DEFAULT_SHUTDOWN_TIMEOUT;
 
     private ServiceRegistration<TestManager> testManagerSR;
 
     private TestRunnerEngineServiceTracker testRunnerEngineServiceTracker;
-
-    private Thread testRunnerThread;
 
     private TestServiceTracker testServiceTracker;
 
@@ -218,17 +216,9 @@ public class TestRunnerActivator implements BundleActivator {
         String stopAfterTests = System.getenv(TestRunnerConstants.ENV_STOP_AFTER_TESTS);
         final boolean shutdownAfterTests = Boolean.parseBoolean(stopAfterTests);
 
-        testRunnerThread = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager,
-                        shutdownAfterTests);
-                testServiceTracker.open();
-            }
-        });
-        testRunnerThread.setDaemon(false);
-        testRunnerThread.start();
+        testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager,
+                shutdownAfterTests);
+        testServiceTracker.open();
 
         if (shutdownAfterTests) {
             frameworkStartBlocker = new FrameworkStartingShutdownBlockerImpl(context);
@@ -270,6 +260,5 @@ public class TestRunnerActivator implements BundleActivator {
         if (frameworkStartBlockerSR != null) {
             frameworkStartBlockerSR.unregister();
         }
-        testRunnerThread.interrupt();
     }
 }
