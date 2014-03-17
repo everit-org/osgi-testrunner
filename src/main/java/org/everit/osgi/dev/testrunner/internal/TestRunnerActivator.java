@@ -33,10 +33,14 @@ import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
 import org.everit.osgi.dev.testrunner.internal.blocking.FrameworkStartingShutdownBlockerImpl;
+import org.everit.osgi.dev.testrunner.internal.blocking.TestNumShutdownBlockerImpl;
 import org.everit.osgi.dev.testrunner.internal.util.ThreadUtil;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.FrameworkEvent;
+import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.launch.Framework;
 
@@ -196,7 +200,13 @@ public class TestRunnerActivator implements BundleActivator {
      */
     private final int shutdownTimeout = TestRunnerConstants.DEFAULT_SHUTDOWN_TIMEOUT;
 
+    private FrameworkListener startTestManagerOnFrameworkActive;
+
     private ServiceRegistration<TestManager> testManagerSR;
+
+    private TestNumShutdownBlockerImpl testNumBlocker;
+
+    private ServiceRegistration<ShutdownBlocker> testNumBlockerSR;
 
     private TestRunnerEngineServiceTracker testRunnerEngineServiceTracker;
 
@@ -204,7 +214,6 @@ public class TestRunnerActivator implements BundleActivator {
 
     @Override
     public void start(final BundleContext context) throws Exception {
-
         String resultDumpFolder = System.getenv(TestRunnerConstants.ENV_TEST_RESULT_FOLDER);
 
         testRunnerEngineServiceTracker = new TestRunnerEngineServiceTracker(context);
@@ -216,10 +225,6 @@ public class TestRunnerActivator implements BundleActivator {
         String stopAfterTests = System.getenv(TestRunnerConstants.ENV_STOP_AFTER_TESTS);
         final boolean shutdownAfterTests = Boolean.parseBoolean(stopAfterTests);
 
-        testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager,
-                shutdownAfterTests);
-        testServiceTracker.open();
-
         if (shutdownAfterTests) {
             frameworkStartBlocker = new FrameworkStartingShutdownBlockerImpl(context);
             frameworkStartBlocker.start();
@@ -227,15 +232,47 @@ public class TestRunnerActivator implements BundleActivator {
                     context.registerService(ShutdownBlocker.class, frameworkStartBlocker,
                             new Hashtable<String, Object>());
 
+            testNumBlocker = new TestNumShutdownBlockerImpl(context);
+            testNumBlockerSR = context.registerService(ShutdownBlocker.class, testNumBlocker,
+                    new Hashtable<String, Object>());
+            testNumBlocker.open();
+
             blockingManager = new BlockingManagerImpl(context);
             blockingManager.start();
 
             new TestFinalizationWaitingShutdownThread(context, resultDumpFolder).start();
         }
+
+        // Only start the test manager if the framework is active. When the framework is active, we expect that all
+        // available test engines are started.
+        Bundle systemBundle = context.getBundle(0);
+        if (systemBundle.getState() == Bundle.ACTIVE) {
+            testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager, testNumBlocker);
+            testServiceTracker.open();
+        } else {
+            startTestManagerOnFrameworkActive = new FrameworkListener() {
+
+                @Override
+                public void frameworkEvent(FrameworkEvent event) {
+                    if (event.getType() == FrameworkEvent.STARTED) {
+                        testServiceTracker = TestServiceTracker.createTestServiceTracker(context, testManager,
+                                testNumBlocker);
+                        testServiceTracker.open();
+                    }
+                }
+            };
+            context.addFrameworkListener(startTestManagerOnFrameworkActive);
+        }
+
     }
 
     @Override
     public void stop(final BundleContext context) throws Exception {
+        if (startTestManagerOnFrameworkActive != null) {
+            context.removeFrameworkListener(startTestManagerOnFrameworkActive);
+            startTestManagerOnFrameworkActive = null;
+        }
+
         if (testServiceTracker != null) {
             testServiceTracker.close();
         }
@@ -251,6 +288,14 @@ public class TestRunnerActivator implements BundleActivator {
 
         if (runnableThreadBlockerSR != null) {
             runnableThreadBlockerSR.unregister();
+        }
+
+        if (testNumBlocker != null) {
+            testNumBlocker.close();
+        }
+
+        if (testNumBlockerSR != null) {
+            testNumBlockerSR.unregister();
         }
 
         if (frameworkStartBlocker != null) {

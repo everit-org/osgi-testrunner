@@ -19,13 +19,12 @@ package org.everit.osgi.dev.testrunner.internal;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.TestManager;
+import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.everit.osgi.dev.testrunner.internal.blocking.TestNumShutdownBlockerImpl;
@@ -52,33 +51,27 @@ public final class TestServiceTracker extends ServiceTracker<Object, Object> {
     }
 
     public static TestServiceTracker createTestServiceTracker(final BundleContext bundleContext,
-            final TestManager testManager, final boolean startBlocker) {
+            final TestManager testManager, TestNumShutdownBlockerImpl testNumBlocker) {
         try {
             Filter filter = bundleContext.createFilter("(" + TestRunnerConstants.SERVICE_PROPERTY_TEST_ID + "=*)");
-            return new TestServiceTracker(bundleContext, testManager, filter, startBlocker);
+            return new TestServiceTracker(bundleContext, testManager, filter, testNumBlocker);
 
         } catch (InvalidSyntaxException e) {
             throw new RuntimeException("An exception is thrown that should never happen", e);
         }
     }
 
-    private final TestManager testManager;
-
     private ServiceRegistration<ShutdownBlocker> activeTestShutdownBlockerSR;
+
+    private final TestManager testManager;
 
     private final TestNumShutdownBlockerImpl testNumBlocker;
 
-    private ServiceRegistration<ShutdownBlocker> testNumBlockerSR;
-
     private TestServiceTracker(final BundleContext bundleContext, final TestManager testManager, final Filter filter,
-            final boolean startNumBlocker) {
+            TestNumShutdownBlockerImpl testNumBlocker) {
         super(bundleContext, filter, null);
         this.testManager = testManager;
-        if (startNumBlocker) {
-            testNumBlocker = new TestNumShutdownBlockerImpl(bundleContext);
-        } else {
-            testNumBlocker = null;
-        }
+        this.testNumBlocker = testNumBlocker;
     }
 
     @Override
@@ -109,15 +102,6 @@ public final class TestServiceTracker extends ServiceTracker<Object, Object> {
         if (activeTestShutdownBlockerSR != null) {
             activeTestShutdownBlockerSR.unregister();
             activeTestShutdownBlockerSR = null;
-        }
-
-        if (testNumBlocker != null) {
-            testNumBlocker.close();
-        }
-
-        if (testNumBlockerSR != null) {
-            testNumBlockerSR.unregister();
-            testNumBlockerSR = null;
         }
     }
 
@@ -156,17 +140,6 @@ public final class TestServiceTracker extends ServiceTracker<Object, Object> {
 
     @Override
     public void modifiedService(final ServiceReference<Object> reference, final Object service) {
-    }
-
-    @Override
-    public void open() {
-        if (testNumBlocker != null) {
-            testNumBlockerSR = context.registerService(ShutdownBlocker.class, testNumBlocker,
-                    new Hashtable<String, Object>());
-            testNumBlocker.open();
-        }
-
-        super.open();
     }
 
     @Override
