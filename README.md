@@ -18,7 +18,7 @@ properties defined:
 
  - **eosgi.testEngine**: This property defines the test engine to which the
    test should be passed. Currently, there is a **junit4** implementation
-   in the osgi-testrunner-junit4 project.
+   in the [osgi-testrunner-junit4][1] project.
    
 Annotations should be placed into the interface implemented by the OSGi 
 service.
@@ -69,8 +69,9 @@ testrunner with build tools.
 Maven support
 -------------
 
-The [eosgi-maven-plugin][1] uses the testrunner bundle to run the written
+The [eosgi-maven-plugin][2] uses the testrunner bundle to run the written
 tests as a part of the build lifecycle.
 
 
-[1]: http://github.com/everit-org/eosgi-maven-plugin 
+[1]: https://github.com/everit-org/osgi-testrunner-junit4
+[2]: https://github.com/everit-org/eosgi-maven-plugin
