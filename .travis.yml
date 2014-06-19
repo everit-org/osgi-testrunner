@@ -1,3 +1,4 @@
 language: java
 script: mvn clean integration-test
 install: true
+jdk: openjdk6
