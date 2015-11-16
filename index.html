@@ -1,0 +1,192 @@
+<!DOCTYPE HTML>
+<!--
+
+    Copyright (C) 2011 Everit Kft. (http://www.everit.org)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<html>
+
+<head>
+<meta charset="utf-8">
+<title>OSGi Testrunner</title>
+<link rel="icon" type="image/ico" href="http://www.everit.org/fonts/favicon.ico">
+
+<!--    <link rel="stylesheet" type="text/css" href="common/css/base.css">-->
+<link href="http://www.everit.org/css/bootstrap.min.css" rel="stylesheet">
+<link href="http://www.everit.org/css/docs.min.css" rel="stylesheet">
+<link href="http://www.everit.org/css/everit.css" rel="stylesheet">
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push([ '_setAccount', 'UA-15041869-4' ]);
+  _gaq.push([ '_setDomainName', 'everit.org' ]);
+  _gaq.push([ '_trackPageview' ]);
+</script>
+</head>
+
+<body class="bs-docs-home" data-spy="scroll" data-target="#affix-nav">
+  <a class="sr-only" href="#content">Skip to main content</a>
+  <header class="navbar navbar-static-top bs-docs-nav" id="top" role="banner">
+    <div class="container">
+      <div class="navbar-header">
+        <button class="navbar-toggle" type="button" data-toggle="collapse"
+          data-target=".bs-navbar-collapse">
+          <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span
+            class="icon-bar"></span> <span class="icon-bar"></span>
+        </button>
+        <a href="#" class="navbar-brand">Index</a>
+      </div>
+      <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+        <ul class="nav navbar-nav">
+          <li><a href="https://github.com/everit-org/osgi-testrunner" target="_blank">Source</a></li>
+          <li><a href="http://www.everit.org/" target="_blank">Community</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="http://www.everit.biz" target="_blank">Enterprise</a></li>
+          <li><a href="http://everitorg.wordpress.com/" target="_blank">Blog</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="bs-docs-masthead everit-header" id="content" role="main">
+    <div class="container">
+      <span class="bs-docs-booticon bs-docs-booticon-lg bs-docs-booticon-outline"> <img
+        class="logo" src="http://www.everit.org/fonts/sbz_e.svg" alt="E">
+      </span>
+      <p class="lead">OSGi Testrunner</p>
+    </div>
+  </div>
+  <div class="container">
+    <div class="col-md-10">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="introduction" class="bs-docs-featurette-title">Introduction</h2>
+        <p>The test runner bundle picks up tests and runs them.</p>
+      </div>
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="running_osgi_tests" class="bs-docs-featurette-title">Running OSGi tests</h2>
+        <p>The module picks up every OSGi service having the following service properties
+          defined:</p>
+        <ul>
+          <li><b>eosgi.testId</b>: This property should have a value capable of being a part of
+            a file name.</li>
+          <li><b>eosgi.testEngine</b>: This property defines the test engine to which the test
+            should be passed. Currently, there is a junit4 implementation in the <a
+            href="https://github.com/everit-org/osgi-testrunner-junit4">osgi-testrunner-junit4</a>
+            project.</li>
+        </ul>
+        <p>Annotations should be placed into the interface implemented by the OSGi service.</p>
+        <p>The bundle does not start looking for services until there is a blocking cause.
+          Blocking causes can be:</p>
+        <ul>
+          <li>Framework is not started yet (Framework bundle is not in ACTIVE state)</li>
+          <li>Custom blocking causes: It is possible to write custom Blockers and register them
+            as OSGi services. If they are registered, they are picked up, and the related tests will
+            not be started after a system startup only if all blockers allow it. Currently, a
+            blocker for Blueprint technology is implemented in the osgi-testrunner-blueprint project
+            that forces the tests to wait until all Blueprintcontainers get into ACTIVE or FAILED
+            state.</li>
+        </ul>
+      </div>
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="ordinary_junit_tests_vs_testrunner_bundle" class="bs-docs-featurette-title">Ordinary
+          JUnit tests vs. testrunner bundle</h2>
+        <p>The tests have to be provided as OSGi services and the JUnit annotations are required
+          to be placed into the interface the OSGi services implement.</p>
+        <p>In ordinary JUnit based solutions, the programmer has to provide the class name so
+          that the JUnit technology can instantiate the class. By using this bundle, the programmer
+          instantiates the JUnit test class with any kind of technology.</p>
+      </div>
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="environment_variables" class="bs-docs-featurette-title">Environment variables</h2>
+        <p>The following environment variables make it easier to integrate the testrunner with
+          build tools.</p>
+        <ul>
+          <li><b>EOSGI_STOP_AFTER_TESTS</b>: In case this system property has the value "true",
+            the testrunner bundle stops the OSGi container and the JVM after the tests run.</li>
+          <li><b>ENV_TEST_RESULT_FOLDER</b>: By default, only test results in TEXT format are
+            written out to the standard output. In case this environment is specified, the test
+            results will be dumped in XML and TEXT format to the specified folder.</li>
+        </ul>
+      </div>
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="maven_support" class="bs-docs-featurette-title">Maven support</h2>
+        <p>
+          The <a href="https://github.com/everit-org/eosgi-maven-plugin">eosgi-maven-plugin</a> uses
+          the testrunner bundle to run the written tests as a part of the build lifecycle.
+        </p>
+      </div>
+      <hr class="featurette-divider">
+    </div>
+
+    <!--        Affix-->
+    <div class="col-md-2 col-sm-0 col-xs-0">
+      <nav id="affix-nav">
+        <ul class="nav nav-pills nav-stacked everit-affix" data-spy="affix" data-offset-top="350"
+          data-offset-bottom="140">
+          <li class="active"><a href="#introduction">Introduction</a></li>
+          <li><a href="#running_osgi_tests">Running OSGi tests</a></li>
+          <li><a href="#ordinary_junit_tests_vs_testrunner_bundle">Ordinary JUnit tests vs.
+              testrunner bundle</a></li>
+          <li><a href="#environment_variables">Environment variables</a></li>
+          <li><a href="#maven_support">Maven support</a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <div></div>
+  <footer class="bs-docs-footer" role="contentinfo">
+    <div class="container">
+      <div class="bs-docs-social">
+        <ul class="bs-docs-social-buttons">
+          <li class="follow-btn "><a href="https://twitter.com/EveritOrg"
+            class="twitter-follow-button" data-show-count="true">Follow @EveritOrg</a></li>
+          <li class="tweet-btn"><a href="https://twitter.com/share"
+            class="twitter-share-button" data-url="http://www.everit.org/">Tweet</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap core JavaScript
+================================================== -->
+  <!-- Placed at the end of the document so the pages load faster -->
+  <script src="http://www.everit.org/js/jquery-2.1.1.min.js"></script>
+  <script src="http://www.everit.org/js/bootstrap.min.js"></script>
+  <script src="http://www.everit.org/js/everit.js "></script>
+  <script type="text/javascript">
+      (function() {
+        var ga = document.createElement('script');
+        ga.type = 'text/javascript';
+        ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl'
+            : 'http://www')
+            + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+</body>
+
+</html>
