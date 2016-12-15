@@ -1,54 +1,52 @@
-/**
- * This file is part of Everit Test Runner Bundle.
+/*
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
  *
- * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Everit Test Runner Bundle is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.everit.osgi.dev.testrunner.blocking;
 
-import java.lang.Thread.State;
-
-import org.everit.osgi.dev.testrunner.TestRunnerConstants;
-
 /**
- * When the JVM is started in the way that the {@link TestRunnerConstants#ENV_STOP_AFTER_TESTS} environment variable is set, the
- * testrunner stops the JVM as soon as there is no thread that is in {@link State#RUNNABLE}. By implementing a
- * {@link ShutdownBlocker}, it is possible to make the testrunner waiting a bit more. This can be useful when the JVM
- * has to wait for pheripherials during startup.
+ * When the JVM is started in the way that the
+ * {@link org.everit.osgi.dev.testrunner.TestRunnerConstants#ENV_STOP_AFTER_TESTS} environment
+ * variable is set, the testrunner stops the JVM as soon as there is no thread that is in
+ * {@link java.lang.Thread.State#RUNNABLE}. By implementing a {@link ShutdownBlocker}, it is
+ * possible to make the testrunner waiting a bit more. This can be useful when the JVM has to wait
+ * for pheripherials during startup.
  */
 public interface ShutdownBlocker {
 
-    /**
-     * Adding a listener to the Blocker so it can notify the listener about blocking and unblocking. Normally at least
-     * there is one listener that is the test runner itself.
-     */
-    void addBlockListener(BlockListener blockListener);
+  /**
+   * Adding a listener to the Blocker so it can notify the listener about blocking and unblocking.
+   * Normally at least there is one listener that is the test runner itself.
+   */
+  void addBlockListener(BlockListener blockListener);
 
-    /**
-     * The {@link BlockingManager} calls this function periodically to be able to log out the causes of the blocked
-     * tests.
-     * 
-     * @param sb
-     *            The causes should be written into the {@link StringBuilder}. It is recommended to start every line
-     *            with two spaces and write a line break onto the end of the message to have pretty output.
-     */
-    void logBlockCauses(StringBuilder sb);
+  /**
+   * The {@link BlockingManager} calls this function periodically to be able to log out the causes
+   * of the blocked tests.
+   *
+   * @param sb
+   *          The causes should be written into the {@link StringBuilder}. It is recommended to
+   *          start every line with two spaces and write a line break onto the end of the message to
+   *          have pretty output.
+   */
+  void logBlockCauses(StringBuilder sb);
 
-    /**
-     * Removing a blocking listener so it does not have to be notified anymore.
-     * 
-     * @param blockListener
-     *            The listener instance.
-     */
-    void removeBlockListener(BlockListener blockListener);
+  /**
+   * Removing a blocking listener so it does not have to be notified anymore.
+   *
+   * @param blockListener
+   *          The listener instance.
+   */
+  void removeBlockListener(BlockListener blockListener);
 }

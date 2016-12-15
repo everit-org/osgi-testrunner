@@ -13,19 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.everit.osgi.dev.testrunner;
+package org.everit.osgi.dev.testrunner.engine;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.List;
 
 /**
- * Annotates methods or classes that should be executed even if the testrunner is in development
- * mode.
+ * Parameter class of {@link TestClassResult} constructor.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
-public @interface TestDuringDevelopment {
+public class TestClassResultParameter {
+
+  public String className;
+
+  public long errorCount;
+
+  public long failureCount;
+
+  public long finishTime;
+
+  public long ignoreCount;
+
+  public long runCount;
+
+  public long startTime;
+
+  public List<TestCaseResult> testCaseResults;
 
 }

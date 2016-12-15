@@ -1,18 +1,17 @@
-/**
- * This file is part of Everit Test Runner Bundle.
+/*
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
  *
- * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Everit Test Runner Bundle is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.everit.osgi.dev.testrunner.internal.util;
 
@@ -21,20 +20,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * Util methods for JVM thread handling.
+ */
 public final class ThreadUtil {
 
-    public List<Thread> countDeamonThreads() {
-        List<Thread> result = new ArrayList<Thread>();
-        Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
-        for (Entry<Thread, StackTraceElement[]> threadAndStackTrace : allStackTraces.entrySet()) {
-            Thread thread = threadAndStackTrace.getKey();
-            if (!thread.isDaemon() && !Thread.State.TERMINATED.equals(thread.getState())
-                    && !thread.equals(Thread.currentThread())
-                    && (threadAndStackTrace.getValue().length > 0)) {
-                result.add(thread);
-            }
-        }
-        return result;
+  /**
+   * Returns all of the running daemon threads.
+   *
+   * @return The daemon threads.
+   */
+  public List<Thread> countDeamonThreads() {
+    List<Thread> result = new ArrayList<Thread>();
+    Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
+    for (Entry<Thread, StackTraceElement[]> threadAndStackTrace : allStackTraces.entrySet()) {
+      Thread thread = threadAndStackTrace.getKey();
+      if (!thread.isDaemon() && !Thread.State.TERMINATED.equals(thread.getState())
+          && !thread.equals(Thread.currentThread())
+          && (threadAndStackTrace.getValue().length > 0)) {
+        result.add(thread);
+      }
     }
+    return result;
+  }
 
 }

@@ -1,18 +1,17 @@
-/**
- * This file is part of Everit Test Runner Bundle.
+/*
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
  *
- * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Everit Test Runner Bundle is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.everit.osgi.dev.testrunner.internal;
 
@@ -23,6 +22,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -58,282 +58,324 @@ import org.xml.sax.SAXException;
  */
 public final class ResultUtil {
 
-    /**
-     * The logger of the class.
-     */
-    private static final Logger LOGGER = Logger.getLogger(ResultUtil.class.getName());
+  /**
+   * The logger of the class.
+   */
+  private static final Logger LOGGER = Logger.getLogger(ResultUtil.class.getName());
 
-    /**
-     * The number that should be used to get the seconds from a millisec based value during a diviation.
-     */
-    private static final int MILLISEC_DECIMAL_DIVIDER = 1000;
+  /**
+   * The number that should be used to get the seconds from a millisec based value during a
+   * diviation.
+   */
+  private static final int MILLISEC_DECIMAL_DIVIDER = 1000;
 
-    /**
-     * The smallest number that needs three digits.
-     */
-    private static final int SMALLEST_THREE_DIGIT_DECIMAL = 100;
+  /**
+   * The smallest number that needs three digits.
+   */
+  private static final int SMALLEST_THREE_DIGIT_DECIMAL = 100;
 
-    /**
-     * The smallest number that needs two digit.
-     */
-    private static final int SMALLEST_TWO_DIGIT_DECIMAL = 10;
+  /**
+   * The smallest number that needs two digit.
+   */
+  private static final int SMALLEST_TWO_DIGIT_DECIMAL = 10;
 
-    /**
-     * Converting the time into String format.
-     * 
-     * @param time
-     *            The time in millisecs calculates since 1970.
-     * @return The String representation of the time: seconds.millisecs.
-     */
-    public static String convertTimeToString(final long time) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(time / MILLISEC_DECIMAL_DIVIDER);
-        long millisecs = time % MILLISEC_DECIMAL_DIVIDER;
-        if (millisecs > 0) {
-            sb.append(".");
-            if (millisecs < SMALLEST_TWO_DIGIT_DECIMAL) {
-                sb.append("00");
-            } else if (millisecs < SMALLEST_THREE_DIGIT_DECIMAL) {
-                sb.append("0");
-            }
-            sb.append(millisecs);
-        }
-
-        return sb.toString();
+  /**
+   * Converting the time into String format.
+   *
+   * @param time
+   *          The time in millisecs calculates since 1970.
+   * @return The String representation of the time: seconds.millisecs.
+   */
+  public static String convertTimeToString(final long time) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(time / MILLISEC_DECIMAL_DIVIDER);
+    long millisecs = time % MILLISEC_DECIMAL_DIVIDER;
+    if (millisecs > 0) {
+      sb.append(".");
+      if (millisecs < SMALLEST_TWO_DIGIT_DECIMAL) {
+        sb.append("00");
+      } else if (millisecs < SMALLEST_THREE_DIGIT_DECIMAL) {
+        sb.append("0");
+      }
+      sb.append(millisecs);
     }
 
-    /**
-     * Dumping test results in text format.
-     * 
-     * @param testId
-     *            Id of the test.
-     * 
-     * @param testClassResult
-     *            The results of the test.
-     * @param writer
-     *            The writer the test results will be written to.
-     * @throws IOException
-     *             if the writer does not work well.
-     */
-    public static void dumpTextResult(final TestClassResult testClassResult, final String testId, final Writer writer)
-            throws IOException {
-        String testClassName = testClassResult.getClassName();
-        writer.write("-------------------------------------------------------------------------------\n");
-        writer.write("Test set: " + testClassName + (testId != null ? " (" + testId + ")" : "") + "\n");
-        writer.write("-------------------------------------------------------------------------------\n");
-        writer.write("Tests run: " + testClassResult.getRunCount() + ", Failures: " + testClassResult.getFailureCount()
-                + ", Errors: " + testClassResult.getErrorCount() + ", Skipped: " + testClassResult.getIgnoreCount()
-                + ", Time elapsed: " + ResultUtil.convertTimeToString(testClassResult.getRunTime()) + " sec");
-        if (testClassResult.getFailureCount() > 0) {
-            writer.write(" <<< FAILURE!");
-        }
-        writer.write("\n");
+    return sb.toString();
+  }
 
-        PrintWriter pw = new PrintWriter(writer);
-        for (TestCaseResult testCaseResult : testClassResult.getTestCaseResults()) {
-            if (testCaseResult.getFailure() != null) {
-                Throwable failure = testCaseResult.getFailure();
-                writer.write(testCaseResult.getTestMethodName() + "  Time elapsed: "
-                        + ResultUtil.convertTimeToString(testCaseResult.getRunningTime()) + " sec  <<< "
-                        + ((failure instanceof AssertionError) ? "FAILURE" : "ERROR") + "!" + "\n");
-
-                failure.printStackTrace(pw);
-            }
-        }
-        pw.flush();
+  private static void createParentDirectory(final File file) {
+    File parentFolder = file.getParentFile();
+    boolean folderCreationSuccessful = parentFolder.exists() || parentFolder.mkdirs();
+    if (!folderCreationSuccessful) {
+      throw new UncheckedIOException(
+          new IOException("Cannot create test result folder: " + parentFolder));
     }
+  }
 
-    /**
-     * Dumping test results in XML format.
-     * 
-     * @param testId
-     *            Id of the test.
-     * @param testClassResult
-     *            The results of the test.
-     * @param writer
-     *            The writer the test results will be written to.
-     */
-    public static void dumpXmlResult(final TestClassResult testClassResult, final String testId, final Writer writer) {
-
-        try {
-            Node testSuiteElement = ResultUtil.generateTestSuiteNode(testClassResult);
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            Source source = new DOMSource(testSuiteElement);
-            javax.xml.transform.Result xmlResult = new StreamResult(writer);
-            transformer.transform(source, xmlResult);
-            writer.flush();
-        } catch (TransformerConfigurationException e) {
-            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
-        } catch (TransformerException e) {
-            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
-        }
+  /**
+   * Dumping test results in text format.
+   *
+   * @param testId
+   *          Id of the test.
+   *
+   * @param testClassResult
+   *          The results of the test.
+   * @param writer
+   *          The writer the test results will be written to.
+   * @throws IOException
+   *           if the writer does not work well.
+   */
+  public static void dumpTextResult(final TestClassResult testClassResult, final String testId,
+      final Writer writer)
+      throws IOException {
+    String testClassName = testClassResult.getClassName();
+    writer
+        .write("-------------------------------------------------------------------------------\n");
+    writer.write("Test set: " + testClassName + (testId != null ? " (" + testId + ")" : "") + "\n");
+    writer
+        .write("-------------------------------------------------------------------------------\n");
+    writer.write("Tests run: " + testClassResult.getRunCount() + ", Failures: "
+        + testClassResult.getFailureCount()
+        + ", Errors: " + testClassResult.getErrorCount() + ", Skipped: "
+        + testClassResult.getIgnoreCount()
+        + ", Time elapsed: " + ResultUtil.convertTimeToString(testClassResult.getRunTime())
+        + " sec");
+    if (testClassResult.getFailureCount() > 0) {
+      writer.write(" <<< FAILURE!");
     }
+    writer.write("\n");
 
-    public static String generateFileNameWithoutExtension(final String testClassName, final String testId,
-            final boolean includeDate) {
-        StringBuilder sb = new StringBuilder(testClassName);
-        if (testId != null) {
-            sb.append("_").append(testId);
-        }
-        if (includeDate) {
-            sb.append("_");
-            SimpleDateFormat dateFormat = new SimpleDateFormat("YYYYMMddHHmmss");
-            String formattedDate = dateFormat.format(new Date());
-            sb.append(formattedDate);
-        }
-        return sb.toString();
+    PrintWriter pw = new PrintWriter(writer);
+    for (TestCaseResult testCaseResult : testClassResult.getTestCaseResults()) {
+      if (testCaseResult.getFailure() != null) {
+        Throwable failure = testCaseResult.getFailure();
+        writer.write(testCaseResult.getTestMethodName() + "  Time elapsed: "
+            + ResultUtil.convertTimeToString(testCaseResult.getRunningTime()) + " sec  <<< "
+            + ((failure instanceof AssertionError) ? "FAILURE" : "ERROR") + "!" + "\n");
+
+        failure.printStackTrace(pw);
+      }
     }
+    pw.flush();
+  }
 
-    /**
-     * Generating a testSuite XML node from a test result.
-     * 
-     * @param testClassResult
-     *            The result of the test.
-     * @return An XML node representing the testSuite.
-     */
-    public static Node generateTestSuiteNode(final TestClassResult testClassResult) {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        try {
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document document = db.newDocument();
-            Element testSuiteElement = document.createElement("testsuite");
-            document.appendChild(testSuiteElement);
+  /**
+   * Dumping test results in XML format.
+   *
+   * @param testId
+   *          Id of the test.
+   * @param testClassResult
+   *          The results of the test.
+   * @param writer
+   *          The writer the test results will be written to.
+   */
+  public static void dumpXmlResult(final TestClassResult testClassResult, final String testId,
+      final Writer writer) {
 
-            testSuiteElement.setAttribute("failures", String.valueOf(testClassResult.getFailureCount()));
-            testSuiteElement.setAttribute("time", ResultUtil.convertTimeToString(testClassResult.getRunTime()));
-            testSuiteElement.setAttribute("errors", String.valueOf(testClassResult.getErrorCount()));
-            testSuiteElement.setAttribute("skipped", String.valueOf(testClassResult.getIgnoreCount()));
-            testSuiteElement.setAttribute("tests", String.valueOf(testClassResult.getRunCount()));
-            testSuiteElement.setAttribute("name", testClassResult.getClassName());
-
-            Element propertiesElement = document.createElement("properties");
-            testSuiteElement.appendChild(propertiesElement);
-            Set<Entry<Object, Object>> propertyEntrySet = System.getProperties().entrySet();
-            for (Entry<Object, Object> propertyEntry : propertyEntrySet) {
-                Element propertyElement = document.createElement("property");
-                propertiesElement.appendChild(propertyElement);
-                propertyElement.setAttribute("name", String.valueOf(propertyEntry.getKey()));
-                propertyElement.setAttribute("value", String.valueOf(propertyEntry.getValue()));
-            }
-            List<TestCaseResult> testCaseResults = testClassResult.getTestCaseResults();
-            for (TestCaseResult testCaseResult : testCaseResults) {
-                if (testCaseResult.getFinishTime() != null) {
-                    Element testCaseElement = document.createElement("testcase");
-                    testSuiteElement.appendChild(testCaseElement);
-                    testCaseElement.setAttribute("time",
-                            ResultUtil.convertTimeToString(testCaseResult.getRunningTime()));
-                    testCaseElement.setAttribute("classname", testClassResult.getClassName());
-                    testCaseElement.setAttribute("name", testCaseResult.getTestMethodName());
-                    if (testCaseResult.getFailure() != null) {
-                        Throwable failure = testCaseResult.getFailure();
-                        Element errorElement = null;
-                        if (failure instanceof AssertionError) {
-                            errorElement = document.createElement("failure");
-                        } else {
-                            errorElement = document.createElement("error");
-                        }
-                        testCaseElement.appendChild(errorElement);
-                        if (failure != null) {
-                            errorElement.setAttribute("message", failure.getMessage());
-                        }
-
-                        if (failure != null) {
-                            errorElement.setAttribute("type", failure.getClass().getName());
-                            StringWriter sw = new StringWriter();
-                            PrintWriter pw = new PrintWriter(sw);
-                            failure.printStackTrace(pw);
-                            errorElement.setTextContent(sw.toString());
-                        }
-                    }
-                }
-            }
-            return testSuiteElement;
-        } catch (ParserConfigurationException e) {
-            LOGGER.log(Level.SEVERE, "Error generating test suite node", e);
-        }
-        return null;
+    try {
+      Node testSuiteElement = ResultUtil.generateTestSuiteNode(testClassResult);
+      TransformerFactory tf = TransformerFactory.newInstance();
+      Transformer transformer = tf.newTransformer();
+      Source source = new DOMSource(testSuiteElement);
+      javax.xml.transform.Result xmlResult = new StreamResult(writer);
+      transformer.transform(source, xmlResult);
+      writer.flush();
+    } catch (TransformerConfigurationException e) {
+      LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
+    } catch (TransformerException e) {
+      LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
+    } catch (IOException e) {
+      LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
     }
+  }
 
-    public static String getTestIdFromReference(final ServiceReference<?> reference) {
-        Object testIdProp = reference.getProperty(TestRunnerConstants.SERVICE_PROPERTY_TEST_ID);
-        if ((testIdProp != null) && (testIdProp instanceof String)) {
-            return (String) testIdProp;
-        } else {
-            return null;
-        }
+  /**
+   * Generateds the name of the test result file without an extension. An extension might be txt or
+   * xml later.
+   *
+   * @param testClassName
+   *          The name of the test class.
+   * @param testId
+   *          The id of the test.
+   * @param includeDate
+   *          The date when the test was run.
+   * @return The name of the file.
+   */
+  public static String generateFileNameWithoutExtension(final String testClassName,
+      final String testId,
+      final boolean includeDate) {
+    StringBuilder sb = new StringBuilder(testClassName);
+    if (testId != null) {
+      sb.append("_").append(testId);
     }
-
-    public static void writeTextResultToFile(final TestClassResult testClassResult, final String testId,
-            final File file, final boolean append) throws IOException {
-        boolean existed = file.exists();
-        FileOutputStream fout = new FileOutputStream(file, append);
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout, "UTF8"));
-        try {
-            if (existed && append) {
-                bw.write("\n\n");
-            }
-            ResultUtil.dumpTextResult(testClassResult, testId, bw);
-        } finally {
-            if (bw != null) {
-                bw.close();
-            }
-        }
-
+    if (includeDate) {
+      sb.append("_");
+      SimpleDateFormat dateFormat = new SimpleDateFormat("YYYYMMddHHmmss");
+      String formattedDate = dateFormat.format(new Date());
+      sb.append(formattedDate);
     }
+    return sb.toString();
+  }
 
-    /**
-     * Writing the test result in XML format to a file.
-     * 
-     * @param testId
-     *            Id of the test.
-     * @param testClassResult
-     *            The result of test.
-     * @param file
-     *            The file where test results should be written.
-     * @param append
-     *            Whether to append or rewrite the test results to the file.
-     */
-    public static void writeXmlResultToFile(final TestClassResult testClassResult, final File file,
-            final String testId, final boolean append) {
-        file.getParentFile().mkdirs();
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        try {
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document document = null;
-            if (file.exists() && append) {
-                document = db.parse(file);
+  /**
+   * Generating a testSuite XML node from a test result.
+   *
+   * @param testClassResult
+   *          The result of the test.
+   * @return An XML node representing the testSuite.
+   */
+  public static Node generateTestSuiteNode(final TestClassResult testClassResult) {
+    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    try {
+      DocumentBuilder db = dbf.newDocumentBuilder();
+      Document document = db.newDocument();
+      Element testSuiteElement = document.createElement("testsuite");
+      document.appendChild(testSuiteElement);
+
+      testSuiteElement.setAttribute("failures", String.valueOf(testClassResult.getFailureCount()));
+      testSuiteElement.setAttribute("time",
+          ResultUtil.convertTimeToString(testClassResult.getRunTime()));
+      testSuiteElement.setAttribute("errors", String.valueOf(testClassResult.getErrorCount()));
+      testSuiteElement.setAttribute("skipped", String.valueOf(testClassResult.getIgnoreCount()));
+      testSuiteElement.setAttribute("tests", String.valueOf(testClassResult.getRunCount()));
+      testSuiteElement.setAttribute("name", testClassResult.getClassName());
+
+      Element propertiesElement = document.createElement("properties");
+      testSuiteElement.appendChild(propertiesElement);
+      Set<Entry<Object, Object>> propertyEntrySet = System.getProperties().entrySet();
+      for (Entry<Object, Object> propertyEntry : propertyEntrySet) {
+        Element propertyElement = document.createElement("property");
+        propertiesElement.appendChild(propertyElement);
+        propertyElement.setAttribute("name", String.valueOf(propertyEntry.getKey()));
+        propertyElement.setAttribute("value", String.valueOf(propertyEntry.getValue()));
+      }
+      List<TestCaseResult> testCaseResults = testClassResult.getTestCaseResults();
+      for (TestCaseResult testCaseResult : testCaseResults) {
+        if (testCaseResult.getFinishTime() != null) {
+          Element testCaseElement = document.createElement("testcase");
+          testSuiteElement.appendChild(testCaseElement);
+          testCaseElement.setAttribute("time",
+              ResultUtil.convertTimeToString(testCaseResult.getRunningTime()));
+          testCaseElement.setAttribute("classname", testClassResult.getClassName());
+          testCaseElement.setAttribute("name", testCaseResult.getTestMethodName());
+          if (testCaseResult.getFailure() != null) {
+            Throwable failure = testCaseResult.getFailure();
+            Element errorElement = null;
+            if (failure instanceof AssertionError) {
+              errorElement = document.createElement("failure");
             } else {
-                document = db.newDocument();
+              errorElement = document.createElement("error");
             }
-            Node node = document.adoptNode(ResultUtil.generateTestSuiteNode(testClassResult));
-            document.appendChild(node);
+            testCaseElement.appendChild(errorElement);
+            if (failure != null) {
+              errorElement.setAttribute("message", failure.getMessage());
+            }
 
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-            Source source = new DOMSource(node);
-            javax.xml.transform.Result xmlResult = new StreamResult(file);
-            transformer.transform(source, xmlResult);
-        } catch (ParserConfigurationException e) {
-            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
-        } catch (SAXException e) {
-            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
-        } catch (TransformerConfigurationException e) {
-            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
-        } catch (TransformerException e) {
-            LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
+            if (failure != null) {
+              errorElement.setAttribute("type", failure.getClass().getName());
+              StringWriter sw = new StringWriter();
+              PrintWriter pw = new PrintWriter(sw);
+              failure.printStackTrace(pw);
+              errorElement.setTextContent(sw.toString());
+            }
+          }
         }
+      }
+      return testSuiteElement;
+    } catch (ParserConfigurationException e) {
+      LOGGER.log(Level.SEVERE, "Error generating test suite node", e);
+    }
+    return null;
+  }
+
+  /**
+   * Resolves the id of the test from the {@link ServiceReference} instance by checking the
+   * {@link TestRunnerConstants#SERVICE_PROPERTY_TEST_ID} service property.
+   *
+   * @param reference
+   *          The service reference.
+   * @return The id of the test.
+   */
+  public static String getTestIdFromReference(final ServiceReference<?> reference) {
+    Object testIdProp = reference.getProperty(TestRunnerConstants.SERVICE_PROPERTY_TEST_ID);
+    if ((testIdProp != null) && (testIdProp instanceof String)) {
+      return (String) testIdProp;
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Write the test results into a text file.
+   *
+   * @param testClassResult
+   *          The test results.
+   * @param testId
+   *          The if of the test.
+   * @param file
+   *          The file to write to.
+   * @param append
+   *          Whether to append the file or overwrite it.
+   * @throws IOException
+   *           if the file cannot be written.
+   */
+  public static void writeTextResultToFile(final TestClassResult testClassResult,
+      final String testId,
+      final File file, final boolean append) throws IOException {
+    boolean existed = file.exists();
+    FileOutputStream fout = new FileOutputStream(file, append);
+
+    try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout, "UTF8"))) {
+      if (existed && append) {
+        bw.write("\n\n");
+      }
+      ResultUtil.dumpTextResult(testClassResult, testId, bw);
     }
 
-    /**
-     * Private constructor for Util class.
-     */
-    private ResultUtil() {
+  }
+
+  /**
+   * Writing the test result in XML format to a file.
+   *
+   * @param testId
+   *          Id of the test.
+   * @param testClassResult
+   *          The result of test.
+   * @param file
+   *          The file where test results should be written.
+   * @param append
+   *          Whether to append or rewrite the test results to the file.
+   */
+  public static void writeXmlResultToFile(final TestClassResult testClassResult, final File file,
+      final String testId, final boolean append) {
+    createParentDirectory(file);
+    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    try {
+      DocumentBuilder db = dbf.newDocumentBuilder();
+      Document document = null;
+      if (file.exists() && append) {
+        document = db.parse(file);
+      } else {
+        document = db.newDocument();
+      }
+      Node node = document.adoptNode(ResultUtil.generateTestSuiteNode(testClassResult));
+      document.appendChild(node);
+
+      TransformerFactory tf = TransformerFactory.newInstance();
+      Transformer transformer = tf.newTransformer();
+      transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+      transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+      Source source = new DOMSource(node);
+      javax.xml.transform.Result xmlResult = new StreamResult(file);
+      transformer.transform(source, xmlResult);
+    } catch (ParserConfigurationException | IOException | TransformerException | SAXException e) {
+      LOGGER.log(Level.SEVERE, "Error during dumping test results in XML format", e);
     }
+  }
+
+  /**
+   * Private constructor for Util class.
+   */
+  private ResultUtil() {
+  }
 }

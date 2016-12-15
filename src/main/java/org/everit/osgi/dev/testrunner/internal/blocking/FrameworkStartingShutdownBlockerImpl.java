@@ -1,18 +1,17 @@
-/**
- * This file is part of Everit Test Runner Bundle.
+/*
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
  *
- * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Everit Test Runner Bundle is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.everit.osgi.dev.testrunner.internal.blocking;
 
@@ -24,63 +23,66 @@ import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
 
 /**
- * One of the main {@link ShutdownBlocker}s of this technology that blocks test running until the framework bundle is
- * started.
+ * One of the main {@link ShutdownBlocker}s of this technology that blocks test running until the
+ * framework bundle is started.
  */
 public class FrameworkStartingShutdownBlockerImpl extends AbstractShutdownBlocker {
 
-    /**
-     * Whether this {@link ShutdownBlocker} currently blocks the {@link BlockingManager} or not.
-     */
-    private boolean blocking = false;
+  /**
+   * Whether this {@link ShutdownBlocker} currently blocks the {@link BlockingManager} or not.
+   */
+  private boolean blocking = false;
 
-    /**
-     * The context of the testrunner bundle.
-     */
-    private final BundleContext bundleContext;
+  /**
+   * The context of the testrunner bundle.
+   */
+  private final BundleContext bundleContext;
 
-    /**
-     * The framework listener that notifies the blocking listeners when the framework is started.
-     */
-    private FrameworkListener frameworkListener;
+  /**
+   * The framework listener that notifies the blocking listeners when the framework is started.
+   */
+  private FrameworkListener frameworkListener;
 
-    public FrameworkStartingShutdownBlockerImpl(final BundleContext bundleContext) {
-        this.bundleContext = bundleContext;
+  public FrameworkStartingShutdownBlockerImpl(final BundleContext bundleContext) {
+    this.bundleContext = bundleContext;
+  }
+
+  @Override
+  public void logBlockCauses(final StringBuilder sb) {
+    if (blocking) {
+      sb.append("  Framework is not started yet");
     }
+  }
 
-    @Override
-    public void logBlockCauses(final StringBuilder sb) {
-        if (blocking) {
-            sb.append("  Framework is not started yet");
-        }
-    }
+  /**
+   * Starting the blocker instance.
+   */
+  public void start() {
+    frameworkListener = new FrameworkListener() {
 
-    public void start() {
-        frameworkListener = new FrameworkListener() {
-
-            @Override
-            public void frameworkEvent(final FrameworkEvent event) {
-                if (event.getType() == FrameworkEvent.STARTED) {
-                    blocking = false;
-                    notifyListenersAboutUnblock();
-                }
-
-            }
-        };
-        bundleContext.addFrameworkListener(frameworkListener);
-
-        Bundle frameworkBundle = bundleContext.getBundle(0);
-        if (frameworkBundle.getState() != Bundle.ACTIVE) {
-            blocking = true;
-            notifyListenersAboutBlock();
-        } else {
-            blocking = false;
+      @Override
+      public void frameworkEvent(final FrameworkEvent event) {
+        if (event.getType() == FrameworkEvent.STARTED) {
+          blocking = false;
+          notifyListenersAboutUnblock();
         }
 
+      }
+    };
+    bundleContext.addFrameworkListener(frameworkListener);
+
+    Bundle frameworkBundle = bundleContext.getBundle(0);
+    if (frameworkBundle.getState() != Bundle.ACTIVE) {
+      blocking = true;
+      notifyListenersAboutBlock();
+    } else {
+      blocking = false;
     }
 
-    public void stop() {
-        bundleContext.removeFrameworkListener(frameworkListener);
-    }
+  }
+
+  public void stop() {
+    bundleContext.removeFrameworkListener(frameworkListener);
+  }
 
 }

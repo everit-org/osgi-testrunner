@@ -1,18 +1,17 @@
-/**
- * This file is part of Everit Test Runner Bundle.
+/*
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
  *
- * Everit Test Runner Bundle is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Everit Test Runner Bundle is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Everit Test Runner Bundle.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.everit.osgi.dev.testrunner.internal.blocking;
 
@@ -34,91 +33,116 @@ import org.osgi.util.tracker.BundleTrackerCustomizer;
  */
 public class TestNumShutdownBlockerImpl extends AbstractShutdownBlocker {
 
-    private class TestNumSummarizer implements BundleTrackerCustomizer<Bundle> {
+  /**
+   * Tracks bundles that might have {@link TestRunnerConstants#HEADER_EXPECTED_NUMBER_OF_TESTS}
+   * header.
+   */
+  private class TestNumSummarizer implements BundleTrackerCustomizer<Bundle> {
 
-        @Override
-        public Bundle addingBundle(final Bundle bundle, final BundleEvent event) {
-            Dictionary<String, String> bundleHeaders = bundle.getHeaders();
-            String expectedTestNumString = bundleHeaders.get(TestRunnerConstants.HEADER_EXPECTED_NUMBER_OF_TESTS);
-            if (expectedTestNumString != null) {
-                try {
-                    int exptectedTestNum = Integer.parseInt(expectedTestNumString);
-                    increaseExpectedTestNum(exptectedTestNum);
-                } catch (NumberFormatException e) {
-                    LOGGER.warning("The value of " + TestRunnerConstants.HEADER_EXPECTED_NUMBER_OF_TESTS
-                            + " header in the bundle '" + bundle.toString() + "' is invalid.");
-                    e.printStackTrace();
-                }
-            }
-            return bundle;
+    @Override
+    public Bundle addingBundle(final Bundle bundle, final BundleEvent event) {
+      Dictionary<String, String> bundleHeaders = bundle.getHeaders();
+      String expectedTestNumString =
+          bundleHeaders.get(TestRunnerConstants.HEADER_EXPECTED_NUMBER_OF_TESTS);
+      if (expectedTestNumString != null) {
+        try {
+          int exptectedTestNum = Integer.parseInt(expectedTestNumString);
+          increaseExpectedTestNum(exptectedTestNum);
+        } catch (NumberFormatException e) {
+          LOGGER.warning("The value of " + TestRunnerConstants.HEADER_EXPECTED_NUMBER_OF_TESTS
+              + " header in the bundle '" + bundle.toString() + "' is invalid.");
+          e.printStackTrace(System.err);
         }
-
-        @Override
-        public void modifiedBundle(final Bundle bundle, final BundleEvent event, final Bundle object) {
-            // Do nothing
-        }
-
-        @Override
-        public void removedBundle(final Bundle bundle, final BundleEvent event, final Bundle object) {
-            // Do nothing
-        }
-
-    }
-
-    private static final Logger LOGGER = Logger.getLogger(TestNumShutdownBlockerImpl.class.getName());
-
-    private int processedTestNumSum = 0;
-
-    private int expectedTestNumSum = 0;
-
-    private boolean blocking = false;
-
-    private Lock lock = new ReentrantLock();
-
-    private final BundleTracker<Bundle> testNumSummarizer;
-
-    public TestNumShutdownBlockerImpl(final BundleContext context) {
-        testNumSummarizer = new BundleTracker<Bundle>(context, Bundle.ACTIVE | Bundle.INSTALLED | Bundle.RESOLVED
-                | Bundle.STARTING | Bundle.STOPPING, new TestNumSummarizer());
-    }
-
-    public void addProcessedTestNum(final int processedTestNum) {
-        lock.lock();
-        processedTestNumSum += processedTestNum;
-        checkBlocking();
-        lock.unlock();
-    }
-
-    private void checkBlocking() {
-        if (blocking && (expectedTestNumSum <= processedTestNumSum)) {
-            notifyListenersAboutUnblock();
-            blocking = false;
-        } else if (!blocking && (expectedTestNumSum > processedTestNumSum)) {
-            notifyListenersAboutBlock();
-            blocking = true;
-        }
-    }
-
-    public void close() {
-        testNumSummarizer.close();
-    }
-
-    private void increaseExpectedTestNum(final int additionalExpectedTestNum) {
-        lock.lock();
-        expectedTestNumSum += additionalExpectedTestNum;
-        checkBlocking();
-        lock.unlock();
+      }
+      return bundle;
     }
 
     @Override
-    public void logBlockCauses(final StringBuilder sb) {
-        lock.lock();
-        sb.append("  The expected number of tests currently is ").append(expectedTestNumSum).append(" while ")
-                .append(processedTestNumSum).append(" tests has been processed.");
-        lock.unlock();
+    public void modifiedBundle(final Bundle bundle, final BundleEvent event, final Bundle object) {
+      // Do nothing
     }
 
-    public void open() {
-        testNumSummarizer.open();
+    @Override
+    public void removedBundle(final Bundle bundle, final BundleEvent event, final Bundle object) {
+      // Do nothing
     }
+
+  }
+
+  private static final Logger LOGGER = Logger.getLogger(TestNumShutdownBlockerImpl.class.getName());
+
+  private boolean blocking = false;
+
+  private int expectedTestNumSum = 0;
+
+  private final Lock lock = new ReentrantLock();
+
+  private int processedTestNumSum = 0;
+
+  private final BundleTracker<Bundle> testNumSummarizer;
+
+  /**
+   * Constructor.
+   *
+   * @param context
+   *          The context of this bundle.
+   */
+  public TestNumShutdownBlockerImpl(final BundleContext context) {
+    testNumSummarizer =
+        new BundleTracker<>(context, Bundle.ACTIVE | Bundle.INSTALLED | Bundle.RESOLVED
+            | Bundle.STARTING | Bundle.STOPPING, new TestNumSummarizer());
+  }
+
+  /**
+   * Adding new test numbers that were processed.
+   *
+   * @param processedTestNum
+   *          The number of tests that were processed.
+   */
+  public void addProcessedTestNum(final int processedTestNum) {
+    lock.lock();
+    try {
+      processedTestNumSum += processedTestNum;
+      checkBlocking();
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  private void checkBlocking() {
+    if (blocking && (expectedTestNumSum <= processedTestNumSum)) {
+      notifyListenersAboutUnblock();
+      blocking = false;
+    } else if (!blocking && (expectedTestNumSum > processedTestNumSum)) {
+      notifyListenersAboutBlock();
+      blocking = true;
+    }
+  }
+
+  public void close() {
+    testNumSummarizer.close();
+  }
+
+  private void increaseExpectedTestNum(final int additionalExpectedTestNum) {
+    lock.lock();
+    try {
+      expectedTestNumSum += additionalExpectedTestNum;
+      checkBlocking();
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  public void logBlockCauses(final StringBuilder sb) {
+    lock.lock();
+    sb.append("  The expected number of tests currently is ").append(expectedTestNumSum)
+        .append(" while ")
+        .append(processedTestNumSum).append(" tests has been processed.");
+    lock.unlock();
+  }
+
+  public void open() {
+    testNumSummarizer.open();
+  }
 }
