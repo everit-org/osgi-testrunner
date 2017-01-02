@@ -26,7 +26,6 @@ import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
@@ -128,30 +127,32 @@ public final class ResultUtil {
   public static void dumpTextResult(final TestClassResult testClassResult, final String testId,
       final Writer writer)
       throws IOException {
-    String testClassName = testClassResult.getClassName();
+    String testClassName = testClassResult.className;
     writer
         .write("-------------------------------------------------------------------------------\n");
     writer.write("Test set: " + testClassName + (testId != null ? " (" + testId + ")" : "") + "\n");
     writer
         .write("-------------------------------------------------------------------------------\n");
-    writer.write("Tests run: " + testClassResult.getRunCount() + ", Failures: "
-        + testClassResult.getFailureCount()
-        + ", Errors: " + testClassResult.getErrorCount() + ", Skipped: "
-        + testClassResult.getIgnoreCount()
-        + ", Time elapsed: " + ResultUtil.convertTimeToString(testClassResult.getRunTime())
-        + " sec");
-    if (testClassResult.getFailureCount() > 0) {
+    writer.write(
+        "Tests run: " + testClassResult.runCount + ", Failures: " + testClassResult.failureCount
+            + ", Errors: " + testClassResult.errorCount + ", Skipped: "
+            + testClassResult.ignoreCount
+            + ", Time elapsed: "
+            + ResultUtil.convertTimeToString(testClassResult.finishTime - testClassResult.startTime)
+            + " sec");
+    if (testClassResult.failureCount > 0) {
       writer.write(" <<< FAILURE!");
     }
     writer.write("\n");
 
     PrintWriter pw = new PrintWriter(writer);
-    for (TestCaseResult testCaseResult : testClassResult.getTestCaseResults()) {
-      if (testCaseResult.getFailure() != null) {
-        Throwable failure = testCaseResult.getFailure();
-        writer.write(testCaseResult.getTestMethodName() + "  Time elapsed: "
-            + ResultUtil.convertTimeToString(testCaseResult.getRunningTime()) + " sec  <<< "
-            + ((failure instanceof AssertionError) ? "FAILURE" : "ERROR") + "!" + "\n");
+    for (TestCaseResult testCaseResult : testClassResult.testCaseResults) {
+      if (testCaseResult.failure != null) {
+        Throwable failure = testCaseResult.failure;
+        writer.write(testCaseResult.testMethodName + "  Time elapsed: "
+            + ResultUtil.convertTimeToString(testCaseResult.finishTime - testCaseResult.startTime)
+            + " sec  <<< " + ((failure instanceof AssertionError) ? "FAILURE" : "ERROR") + "!"
+            + "\n");
 
         failure.printStackTrace(pw);
       }
@@ -202,8 +203,7 @@ public final class ResultUtil {
    * @return The name of the file.
    */
   public static String generateFileNameWithoutExtension(final String testClassName,
-      final String testId,
-      final boolean includeDate) {
+      final String testId, final boolean includeDate) {
     StringBuilder sb = new StringBuilder(testClassName);
     if (testId != null) {
       sb.append("_").append(testId);
@@ -232,13 +232,13 @@ public final class ResultUtil {
       Element testSuiteElement = document.createElement("testsuite");
       document.appendChild(testSuiteElement);
 
-      testSuiteElement.setAttribute("failures", String.valueOf(testClassResult.getFailureCount()));
+      testSuiteElement.setAttribute("failures", String.valueOf(testClassResult.failureCount));
       testSuiteElement.setAttribute("time",
-          ResultUtil.convertTimeToString(testClassResult.getRunTime()));
-      testSuiteElement.setAttribute("errors", String.valueOf(testClassResult.getErrorCount()));
-      testSuiteElement.setAttribute("skipped", String.valueOf(testClassResult.getIgnoreCount()));
-      testSuiteElement.setAttribute("tests", String.valueOf(testClassResult.getRunCount()));
-      testSuiteElement.setAttribute("name", testClassResult.getClassName());
+          ResultUtil.convertTimeToString(testClassResult.finishTime - testClassResult.startTime));
+      testSuiteElement.setAttribute("errors", String.valueOf(testClassResult.errorCount));
+      testSuiteElement.setAttribute("skipped", String.valueOf(testClassResult.ignoreCount));
+      testSuiteElement.setAttribute("tests", String.valueOf(testClassResult.runCount));
+      testSuiteElement.setAttribute("name", testClassResult.className);
 
       Element propertiesElement = document.createElement("properties");
       testSuiteElement.appendChild(propertiesElement);
@@ -249,36 +249,30 @@ public final class ResultUtil {
         propertyElement.setAttribute("name", String.valueOf(propertyEntry.getKey()));
         propertyElement.setAttribute("value", String.valueOf(propertyEntry.getValue()));
       }
-      List<TestCaseResult> testCaseResults = testClassResult.getTestCaseResults();
-      for (TestCaseResult testCaseResult : testCaseResults) {
-        if (testCaseResult.getFinishTime() != null) {
-          Element testCaseElement = document.createElement("testcase");
-          testSuiteElement.appendChild(testCaseElement);
-          testCaseElement.setAttribute("time",
-              ResultUtil.convertTimeToString(testCaseResult.getRunningTime()));
-          testCaseElement.setAttribute("classname", testClassResult.getClassName());
-          testCaseElement.setAttribute("name", testCaseResult.getTestMethodName());
-          if (testCaseResult.getFailure() != null) {
-            Throwable failure = testCaseResult.getFailure();
-            Element errorElement = null;
-            if (failure instanceof AssertionError) {
-              errorElement = document.createElement("failure");
-            } else {
-              errorElement = document.createElement("error");
-            }
-            testCaseElement.appendChild(errorElement);
-            if (failure != null) {
-              errorElement.setAttribute("message", failure.getMessage());
-            }
 
-            if (failure != null) {
-              errorElement.setAttribute("type", failure.getClass().getName());
-              StringWriter sw = new StringWriter();
-              PrintWriter pw = new PrintWriter(sw);
-              failure.printStackTrace(pw);
-              errorElement.setTextContent(sw.toString());
-            }
+      for (TestCaseResult testCaseResult : testClassResult.testCaseResults) {
+        Element testCaseElement = document.createElement("testcase");
+        testSuiteElement.appendChild(testCaseElement);
+        testCaseElement.setAttribute("time",
+            ResultUtil.convertTimeToString(testCaseResult.finishTime - testCaseResult.startTime));
+        testCaseElement.setAttribute("classname", testClassResult.className);
+        testCaseElement.setAttribute("name", testCaseResult.testMethodName);
+        if (testCaseResult.failure != null) {
+          Throwable failure = testCaseResult.failure;
+          Element errorElement = null;
+          if (failure instanceof AssertionError) {
+            errorElement = document.createElement("failure");
+          } else {
+            errorElement = document.createElement("error");
           }
+          testCaseElement.appendChild(errorElement);
+          errorElement.setAttribute("message", failure.getMessage());
+
+          errorElement.setAttribute("type", failure.getClass().getName());
+          StringWriter sw = new StringWriter();
+          PrintWriter pw = new PrintWriter(sw);
+          failure.printStackTrace(pw);
+          errorElement.setTextContent(sw.toString());
         }
       }
       return testSuiteElement;

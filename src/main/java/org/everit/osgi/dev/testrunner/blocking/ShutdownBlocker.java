@@ -15,6 +15,8 @@
  */
 package org.everit.osgi.dev.testrunner.blocking;
 
+import org.everit.osgi.dev.testrunner.engine.TestClassResult;
+
 /**
  * When the JVM is started in the way that the
  * {@link org.everit.osgi.dev.testrunner.TestRunnerConstants#ENV_STOP_AFTER_TESTS} environment
@@ -30,6 +32,14 @@ public interface ShutdownBlocker {
    * Normally at least there is one listener that is the test runner itself.
    */
   void addBlockListener(BlockListener blockListener);
+
+  /**
+   * Called when a test class is executed.
+   *
+   * @param testClassResult
+   *          The execution result of the test class.
+   */
+  void handleTestClassResult(TestClassResult testClassResult);
 
   /**
    * The {@link BlockingManager} calls this function periodically to be able to log out the causes

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.everit.osgi.dev.testrunner.engine;
-
-import java.util.List;
+package org.everit.osgi.dev.testrunner.testcasecapability;
 
 /**
- * Parameter class of {@link TestClassResult} constructor.
+ * Thrown when there is a syntax exception in the eosgi.testClass capability of a bundle. E.g.: The
+ * class name is missing or the count attribute is not a non-negative number.
  */
-public class TestClassResultParameter {
+public class TestClassCapabilitySyntaxException extends RuntimeException {
 
-  public String className;
+  private static final long serialVersionUID = 1466698139894321931L;
 
-  public long errorCount;
-
-  public long failureCount;
-
-  public long finishTime;
-
-  public long ignoreCount;
-
-  public long runCount;
-
-  public long startTime;
-
-  public List<TestCaseResult> testCaseResults;
+  public TestClassCapabilitySyntaxException(final String message) {
+    super(message);
+  }
 
 }

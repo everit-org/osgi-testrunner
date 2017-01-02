@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.everit.osgi.dev.testrunner.internal;
-
-import org.everit.osgi.dev.testrunner.engine.TestEngine;
+package org.everit.osgi.dev.testrunner.testcasecapability;
 
 /**
- * Interface of tracking test runner engines.
+ * Simple holder class for a test class OSGi capability data.
  */
-public interface TestRunnerEngineTracker {
+public class TestClassCapabilityDTO {
+
+  public String clazz;
 
   /**
-   * Returns a test runner for the engine type if available, otherwise null.
-   *
-   * @return a test runner for the engine type if available, otherwise null.
+   * The count how many times this class should be executed.
    */
-  TestEngine getEngineByType(String testEngineType);
+  public int count = 1;
 }

@@ -21,6 +21,19 @@ package org.everit.osgi.dev.testrunner;
 public final class TestRunnerConstants {
 
   /**
+   * The attribute of the {@link #CAPABILITY_TESTCLASS_NAME} capability that tells how many times
+   * the specified class should be executed before the test runner shuts down the VM. If not
+   * specified, that means that the test class should run once.
+   */
+  public static final String CAPABILITY_TESTCLASS_ATTR_EXECUTION_COUNT = "executionCount";
+
+  /**
+   * The name of the capability that tells the test runner that the bundle contains test cases that
+   * the test runner should wait for before shutting down the OSGi container.
+   */
+  public static final String CAPABILITY_TESTCLASS_NAME = "eosgi.testClass";
+
+  /**
    * The time in ms until the testrunner will wait for non-deamon threads stopping before exiting
    * the vm when {@link #ENV_STOP_AFTER_TESTS} environment variable is set to "true".
    */
@@ -39,25 +52,32 @@ public final class TestRunnerConstants {
   public static final String ENV_TEST_RESULT_FOLDER = "EOSGI_TEST_RESULT_FOLDER";
 
   /**
-   * Constant of the MANIFEST header key to count expected number of tests per bundle.
+   * If the OSGi container is started in development mode (not during the integration-test phase of
+   * the build), only those tests are executed after a re-deployment that are annotated
+   * with @{@link TestDuringDevelopment}.
    */
-  public static final String HEADER_EXPECTED_NUMBER_OF_TESTS = "EOSGi-TestNum";
+  public static final boolean IN_DEVELOPMENT_MODE;
 
   /**
-   * Optional property for test services. The property must be available if multiple tests are
-   * registered as OSGi service based on the same interface.
+   * The key of the property that contains the id of the test. Those OSGi services are picked up
+   * that have this service property.
    */
   public static final String SERVICE_PROPERTY_TEST_ID = "eosgi.testId";
 
   /**
    * Required service property for test services and test engine services.
    */
-  public static final String SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE = "eosgi.testEngine";
+  public static final String SERVICE_PROPERTY_TESTRUNNER_ENGINE = "eosgi.testEngine";
 
   /**
    * The name of the file that is written if there is an error during system exit.
    */
   public static final String SYSTEM_EXIT_ERROR_FILE_NAME = "system-exit-error.txt";
+
+  static {
+    IN_DEVELOPMENT_MODE =
+        !Boolean.parseBoolean(System.getenv(TestRunnerConstants.ENV_STOP_AFTER_TESTS));
+  }
 
   private TestRunnerConstants() {
     // Do nothing

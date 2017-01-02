@@ -15,27 +15,24 @@
  */
 package org.everit.osgi.dev.testrunner.engine;
 
-import java.util.List;
+import java.util.Map;
 
-import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
-import org.osgi.framework.ServiceReference;
+import aQute.bnd.annotation.ConsumerType;
 
 /**
  * The class that implements this interface can run tests after the framework is started.
  */
+@ConsumerType
 public interface TestEngine {
 
   /**
-   * Runs a test based on the service reference. The function is not called multiple times parallel.
+   * Runs a test based on a test object instance.
    *
-   * @param reference
-   *          The service reference that contains the test.
-   * @param developmentMode
-   *          In development mode tests should not run unless the class or method is annotated with
-   *          {@link TestDuringDevelopment} annotation.
+   * @param testObject
+   *          The test object instance that contains the test cases.
    *
-   * @return The test result of all classes that belong to this reference.
+   * @return The test results of the specified test object.
    */
-  List<TestClassResult> runTest(ServiceReference<Object> reference, boolean developmentMode);
+  TestClassResult runTestsOfInstance(Object testObject, Map<String, ?> properties);
 
 }

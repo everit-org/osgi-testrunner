@@ -50,7 +50,7 @@ public class FrameworkStartingShutdownBlockerImpl extends AbstractShutdownBlocke
   @Override
   public void logBlockCauses(final StringBuilder sb) {
     if (blocking) {
-      sb.append("  Framework is not started yet");
+      sb.append("  Framework has not been started yet");
     }
   }
 
@@ -64,7 +64,7 @@ public class FrameworkStartingShutdownBlockerImpl extends AbstractShutdownBlocke
       public void frameworkEvent(final FrameworkEvent event) {
         if (event.getType() == FrameworkEvent.STARTED) {
           blocking = false;
-          notifyListenersAboutUnblock();
+          unblock();
         }
 
       }
@@ -74,7 +74,7 @@ public class FrameworkStartingShutdownBlockerImpl extends AbstractShutdownBlocke
     Bundle frameworkBundle = bundleContext.getBundle(0);
     if (frameworkBundle.getState() != Bundle.ACTIVE) {
       blocking = true;
-      notifyListenersAboutBlock();
+      block();
     } else {
       blocking = false;
     }

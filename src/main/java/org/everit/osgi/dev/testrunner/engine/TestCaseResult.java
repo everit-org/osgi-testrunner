@@ -20,70 +20,26 @@ package org.everit.osgi.dev.testrunner.engine;
  */
 public class TestCaseResult {
 
-  private final Throwable failure;
+  public Throwable failure;
 
   /**
    * The time the TestCase stopped to run.
    */
-  private final Long finishTime;
+  public long finishTime;
 
   /**
    * The starting time of the TestCase.
    */
-  private final Long startTime;
+  public long startTime;
 
-  private final String testMethodName;
-
-  /**
-   * Constructor of the class that sets the properties that should be available already.
-   *
-   * @param startTime
-   *          The time when the TestCase was started.
-   */
-  public TestCaseResult(final String testMethodName, final Long startTime, final Long finishTime,
-      final Throwable failure) {
-    this.testMethodName = testMethodName;
-    this.startTime = startTime;
-    this.finishTime = finishTime;
-    this.failure = failure;
-  }
-
-  public Throwable getFailure() {
-    return failure;
-  }
-
-  public Long getFinishTime() {
-    return finishTime;
-  }
-
-  /**
-   * Gives back the amount of time while the TestCase was running or null if the TestCase has not
-   * finished yet.
-   *
-   * @return FinishTime - StartTime.
-   */
-  public Long getRunningTime() {
-    if ((startTime == null) || (finishTime == null)) {
-      return null;
-    } else {
-      return finishTime.longValue() - startTime.longValue();
-    }
-  }
-
-  public long getStartTime() {
-    return startTime;
-  }
-
-  public String getTestMethodName() {
-    return testMethodName;
-  }
+  public String testMethodName;
 
   @Override
   public String toString() {
     return "TestCaseResult [methodName=" + testMethodName + ", startTime=" + startTime
         + ", finishTime="
         + finishTime
-        + ", failure=" + failure + ", running time=" + getRunningTime() + "ms]";
+        + ", failure=" + failure + ", running time=" + (finishTime - startTime) + "ms]";
   }
 
 }

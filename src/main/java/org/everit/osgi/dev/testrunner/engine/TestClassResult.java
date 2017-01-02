@@ -26,92 +26,39 @@ public class TestClassResult {
   /**
    * The name of the class that contained the test (in many cases this is an interface name).
    */
-  private final String className;
+  public String className;
 
   /**
    * The count of errors.
    */
-  private final long errorCount;
+  public long errorCount;
 
   /**
    * The count of failures.
    */
-  private final long failureCount;
+  public long failureCount;
 
   /**
    * The time when the test finished running.
    */
-  private final long finishTime;
+  public long finishTime;
 
   /**
    * The count of tests that were ignored.
    */
-  private final long ignoreCount;
+  public long ignoreCount;
 
   /**
    * The count of tests that ran.
    */
-  private final long runCount;
+  public long runCount;
 
   /**
    * The time the test was started.
    */
-  private final long startTime;
+  public long startTime;
 
-  private List<TestCaseResult> testCaseResults = new ArrayList<TestCaseResult>();
-
-  /**
-   * Constructor.
-   *
-   * @param parameterObject
-   *          The data of the test result.
-   */
-  public TestClassResult(final TestClassResultParameter parameterObject) {
-    className = parameterObject.className;
-    runCount = parameterObject.runCount;
-    errorCount = parameterObject.errorCount;
-    failureCount = parameterObject.failureCount;
-    ignoreCount = parameterObject.ignoreCount;
-    startTime = parameterObject.startTime;
-    finishTime = parameterObject.finishTime;
-    testCaseResults = parameterObject.testCaseResults;
-  }
-
-  public String getClassName() {
-    return className;
-  }
-
-  public long getErrorCount() {
-    return errorCount;
-  }
-
-  public long getFailureCount() {
-    return failureCount;
-  }
-
-  public Long getFinishTime() {
-    return finishTime;
-  }
-
-  public long getIgnoreCount() {
-    return ignoreCount;
-  }
-
-  public long getRunCount() {
-    return runCount;
-  }
-
-  public long getRunTime() {
-    return finishTime - startTime;
-  }
-
-  public long getStartTime() {
-    return startTime;
-  }
-
-  public List<TestCaseResult> getTestCaseResults() {
-    return new ArrayList<TestCaseResult>(testCaseResults);
-  }
+  public List<TestCaseResult> testCaseResults = new ArrayList<>();
 
   @Override
   public String toString() {
@@ -120,7 +67,7 @@ public class TestClassResult {
         + failureCount + ", ignoreCount=" + ignoreCount + ", runCount=" + runCount + ", startTime="
         + startTime
         + ", finishTime=" + finishTime + ", testCaseResults=" + testCaseResults + ", running time="
-        + getRunTime() + "ms]";
+        + (finishTime - startTime) + "ms]";
   }
 
 }

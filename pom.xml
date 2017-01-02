@@ -36,48 +36,43 @@
 
   <inceptionYear>2011</inceptionYear>
 
-  <url>http://everit.org</url>
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <projectpath>osgi-testrunner</projectpath>
+  </properties>
 
-  <organization>
-    <name>Everit Kft.</name>
-    <url>http://www.everit.biz</url>
-  </organization>
+  <url>https://github.com/everit-org/${projectpath}</url>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/everit-org/${projectpath}/issues</url>
+  </issueManagement>
 
   <licenses>
     <license>
-      <name>GNU Lesser General Public License v3.0</name>
-      <url>http://opensource.org/licenses/lgpl-3.0.html</url>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
 
-  <scm>
-    <connection>scm:git:git://github.com/everit-org/osgi-testrunner.git</connection>
-    <developerConnection>scm:git:https://github.com/everit-org/osgi-testrunner.git</developerConnection>
-    <url>https://github.com/everit-org/osgi-testrunner</url>
-  </scm>
+  <developers>
+    <developer>
+      <name>Everit Team</name>
+    </developer>
+  </developers>
 
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://ci.everit.biz/jenkins/job/osgi-testrunner</url>
-  </ciManagement>
-
-  <issueManagement>
-    <system>GitHub</system>
-    <url>https://github.com/everit-org/osgi-testrunner/issues</url>
-  </issueManagement>
-
-  <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-  </properties>
+  <organization>
+    <name>Everit Kft.</name>
+    <url>http://www.everit.org</url>
+  </organization>
 
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.4.0</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
@@ -85,8 +80,8 @@
             <Bundle-Activator>org.everit.osgi.dev.testrunner.internal.TestRunnerActivator</Bundle-Activator>
             <Import-Package>*</Import-Package>
             <Export-Package>
-              org.everit.osgi.dev.testrunner;version="4.0.3",
-              org.everit.osgi.dev.testrunner.blocking;version="4.0.3",
+              org.everit.osgi.dev.testrunner;version="5.0.0",
+              org.everit.osgi.dev.testrunner.blocking;version="5.0.0",
               org.everit.osgi.dev.testrunner.engine;version="5.0.0"
             </Export-Package>
           </instructions>
@@ -98,14 +93,19 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>4.3.1</version>
+      <version>5.0.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.osgi</groupId>
-      <artifactId>org.osgi.compendium</artifactId>
-      <version>4.3.1</version>
+      <groupId>biz.aQute.bnd</groupId>
+      <artifactId>biz.aQute.bndlib</artifactId>
+      <version>3.3.0</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.everit.osgi.bundles</groupId>
+      <artifactId>org.everit.osgi.bundles.org.apache.felix.utils</artifactId>
+      <version>1.6.0</version>
     </dependency>
   </dependencies>
 </project>

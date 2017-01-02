@@ -21,16 +21,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
+import org.everit.osgi.dev.testrunner.engine.TestClassResult;
+
 /**
  * Helper class to be able to implement blocker easier. It handles the blockListeners in a standard
- * way. The subclass of this class should call {@link #notifyListenersAboutBlock()} and
- * {@link #notifyListenersAboutUnblock()}.
+ * way. The subclass of this class should call {@link #block()} and {@link #unblock()}.
  */
 public abstract class AbstractShutdownBlocker implements ShutdownBlocker {
 
   private boolean blocking = false;
 
-  private final List<BlockListener> blockListeners = new ArrayList<BlockListener>();
+  private final List<BlockListener> blockListeners = new ArrayList<>();
 
   private final ReentrantReadWriteLock blockListenersRWLock = new ReentrantReadWriteLock(false);
 
@@ -46,31 +47,38 @@ public abstract class AbstractShutdownBlocker implements ShutdownBlocker {
   }
 
   /**
+   * Should be called by the subclass to notify all listeners that this blocker is blocking. If the
+   * blocker is in blocking state already, nothing will happen.
+   */
+  protected void block() {
+    notifyListeners(true);
+  }
+
+  @Override
+  public void handleTestClassResult(final TestClassResult testClassResult) {
+    // Do nothing
+  }
+
+  /**
    * Notifies all block listeners about either blocking or not blocking.
    *
    * @param block
    *          Whether the event is blocking or not.
    */
-  protected void notifyListeners(final boolean block) {
+  private void notifyListeners(final boolean block) {
     ReadLock readLock = blockListenersRWLock.readLock();
     readLock.lock();
-    blocking = block;
-    for (BlockListener blockListener : blockListeners) {
-      if (block) {
-        blockListener.block();
-      } else {
-        blockListener.unblock();
+    if (blocking != block) {
+      blocking = block;
+      for (BlockListener blockListener : blockListeners) {
+        if (block) {
+          blockListener.block();
+        } else {
+          blockListener.unblock();
+        }
       }
     }
     readLock.unlock();
-  }
-
-  protected void notifyListenersAboutBlock() {
-    notifyListeners(true);
-  }
-
-  protected void notifyListenersAboutUnblock() {
-    notifyListeners(false);
   }
 
   @Override
@@ -79,5 +87,13 @@ public abstract class AbstractShutdownBlocker implements ShutdownBlocker {
     writeLock.lock();
     blockListeners.remove(blockListener);
     writeLock.unlock();
+  }
+
+  /**
+   * Should be called by the subclass to notify all listeners that this blocker is not blocking
+   * anymore. If the blocker is in non-blocking state already, nothing will happen.
+   */
+  protected void unblock() {
+    notifyListeners(false);
   }
 }

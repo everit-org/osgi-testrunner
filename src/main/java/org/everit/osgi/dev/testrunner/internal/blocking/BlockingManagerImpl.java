@@ -50,11 +50,12 @@ public final class BlockingManagerImpl {
       implements ServiceTrackerCustomizer<ShutdownBlocker, ShutdownBlocker> {
 
     private final Map<ShutdownBlocker, BlockListener> listenersByBlockers =
-        new ConcurrentHashMap<ShutdownBlocker, BlockListener>();
+        new ConcurrentHashMap<>();
 
     @Override
     public ShutdownBlocker addingService(final ServiceReference<ShutdownBlocker> reference) {
       final ShutdownBlocker blocker = bundleContext.getService(reference);
+
       BlockListener blockListener = new BlockListener() {
 
         @Override
@@ -78,6 +79,7 @@ public final class BlockingManagerImpl {
           activeBlockersLock.unlock();
         }
       };
+
       listenersByBlockers.put(blocker, blockListener);
 
       blocker.addBlockListener(blockListener);
@@ -132,7 +134,7 @@ public final class BlockingManagerImpl {
    * The blockers that are currently blocking the test runners.
    */
   private final Map<ShutdownBlocker, Boolean> activeBlockers =
-      new HashMap<ShutdownBlocker, Boolean>();
+      new HashMap<>();
 
   private final Condition activeBlockersEmptyCondition;
 
@@ -189,7 +191,7 @@ public final class BlockingManagerImpl {
    */
   private void logNonStartedBundles() {
     Bundle[] bundles = bundleContext.getBundles();
-    List<Bundle> nonStartedBundles = new ArrayList<Bundle>();
+    List<Bundle> nonStartedBundles = new ArrayList<>();
     for (Bundle bundle : bundles) {
       if (bundle.getState() != Bundle.ACTIVE) {
         Object fragmentHostHeader = bundle.getHeaders().get("Fragment-Host");
@@ -229,7 +231,7 @@ public final class BlockingManagerImpl {
 
     if (stopped.compareAndSet(true, false)) {
       blockerTracker =
-          new ServiceTracker<ShutdownBlocker, ShutdownBlocker>(bundleContext, ShutdownBlocker.class,
+          new ServiceTracker<>(bundleContext, ShutdownBlocker.class,
               new BlockerServiceTrackerCustomizer());
       blockerTracker.open();
 
