@@ -35,7 +35,8 @@ import org.osgi.util.tracker.BundleTrackerCustomizer;
 
 /**
  * Waits for all of the test cases to run based on the
- * {@link org.everit.osgi.dev.testrunner.TestRunnerConstants#CAPABILITY_TESTCLASS_NAME} capability.
+ * {@link org.everit.osgi.dev.testrunner.TestRunnerConstants#CAPABILITY_TESTCLASS_NAMESPACE}
+ * capability.
  */
 public class TestClassShutdownBlockerImpl extends AbstractShutdownBlocker {
 
@@ -135,7 +136,14 @@ public class TestClassShutdownBlockerImpl extends AbstractShutdownBlocker {
         if (newCountOfBlockerTestClasses == 1) {
           block();
         }
-      } else if (newExpectedCount == 0) {
+      } else if (alreadyExpectedCount > 0 && newExpectedCount <= 0) {
+        int newCountOfBlockerTestClasses = countOfBlockerTestClasses.decrementAndGet();
+        if (newCountOfBlockerTestClasses == 0) {
+          unblock();
+        }
+      }
+
+      if (newExpectedCount == 0) {
         remainingTestClassCountByClassName.remove(testClassCapability.clazz);
       }
     }

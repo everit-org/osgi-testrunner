@@ -30,13 +30,19 @@ import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 public final class TestClassCapabilityUtil {
 
   private static TestClassCapabilityDTO processTestCaseCapabilityClause(final Clause clause) {
-    String clazz = clause.getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_NAME);
+    String clazz = clause.getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_NAMESPACE);
     if (clazz == null) {
       throw new TestClassCapabilitySyntaxException("Missing class attribute in "
-          + TestRunnerConstants.CAPABILITY_TESTCLASS_NAME + " capability: " + clause);
+          + TestRunnerConstants.CAPABILITY_TESTCLASS_NAMESPACE + " capability: " + clause);
     }
     String countAttr =
-        clause.getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_ATTR_EXECUTION_COUNT);
+        clause.getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_ATTR_INSTANCE_COUNT);
+
+    if (countAttr == null) {
+      countAttr = clause
+          .getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_ATTR_INSTANCE_COUNT + ":Long");
+    }
+
     int count = 1;
     if (countAttr != null) {
       try {
@@ -56,15 +62,15 @@ public final class TestClassCapabilityUtil {
   }
 
   /**
-   * Resolves the {@link TestRunnerConstants#CAPABILITY_TESTCLASS_NAME} capabilities of a specific
-   * Provide-Capability MANIFEST header.
+   * Resolves the {@link TestRunnerConstants#CAPABILITY_TESTCLASS_NAMESPACE} capabilities of a
+   * specific Provide-Capability MANIFEST header.
    *
    * @param provideCapabilityHeader
    *          The header as a string.
    * @return The resolved eosgi.testClass capabilities.
    * @throws TestClassCapabilitySyntaxException
-   *           if {@link TestRunnerConstants#CAPABILITY_TESTCLASS_NAME} attribute is missing or
-   *           {@link TestRunnerConstants#CAPABILITY_TESTCLASS_ATTR_EXECUTION_COUNT} attribute is
+   *           if {@link TestRunnerConstants#CAPABILITY_TESTCLASS_NAMESPACE} attribute is missing or
+   *           {@link TestRunnerConstants#CAPABILITY_TESTCLASS_ATTR_INSTANCE_COUNT} attribute is
    *           not a number.
    */
   public static Collection<TestClassCapabilityDTO> resolveTestCaseCapabilities(
@@ -78,7 +84,7 @@ public final class TestClassCapabilityUtil {
     List<TestClassCapabilityDTO> testCaseCapabilities = new ArrayList<>();
 
     for (Clause clause : clauses) {
-      if (TestRunnerConstants.CAPABILITY_TESTCLASS_NAME.equals(clause.getName())) {
+      if (TestRunnerConstants.CAPABILITY_TESTCLASS_NAMESPACE.equals(clause.getName())) {
         TestClassCapabilityDTO testCaseCapability = processTestCaseCapabilityClause(clause);
         testCaseCapabilities.add(testCaseCapability);
       }

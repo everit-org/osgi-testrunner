@@ -21,17 +21,17 @@ package org.everit.osgi.dev.testrunner;
 public final class TestRunnerConstants {
 
   /**
-   * The attribute of the {@link #CAPABILITY_TESTCLASS_NAME} capability that tells how many times
-   * the specified class should be executed before the test runner shuts down the VM. If not
+   * The attribute of the {@link #CAPABILITY_TESTCLASS_NAMESPACE} capability that tells how many
+   * times the specified class should be executed before the test runner shuts down the VM. If not
    * specified, that means that the test class should run once.
    */
-  public static final String CAPABILITY_TESTCLASS_ATTR_EXECUTION_COUNT = "executionCount";
+  public static final String CAPABILITY_TESTCLASS_ATTR_INSTANCE_COUNT = "instanceCount";
 
   /**
    * The name of the capability that tells the test runner that the bundle contains test cases that
    * the test runner should wait for before shutting down the OSGi container.
    */
-  public static final String CAPABILITY_TESTCLASS_NAME = "eosgi.testClass";
+  public static final String CAPABILITY_TESTCLASS_NAMESPACE = "eosgi.testClass";
 
   /**
    * The time in ms until the testrunner will wait for non-deamon threads stopping before exiting

@@ -16,9 +16,10 @@
 package org.everit.osgi.dev.testrunner.internal.blocking;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,6 +29,7 @@ import java.util.logging.Logger;
 
 import org.everit.osgi.dev.testrunner.blocking.BlockListener;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
+import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.everit.osgi.dev.testrunner.internal.util.BundleUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -49,9 +51,6 @@ public final class BlockingManagerImpl {
   private class BlockerServiceTrackerCustomizer
       implements ServiceTrackerCustomizer<ShutdownBlocker, ShutdownBlocker> {
 
-    private final Map<ShutdownBlocker, BlockListener> listenersByBlockers =
-        new ConcurrentHashMap<>();
-
     @Override
     public ShutdownBlocker addingService(final ServiceReference<ShutdownBlocker> reference) {
       final ShutdownBlocker blocker = bundleContext.getService(reference);
@@ -62,21 +61,24 @@ public final class BlockingManagerImpl {
         public void block() {
           activeBlockersLock.lock();
 
-          activeBlockers.put(blocker, true);
-
-          activeBlockersLock.unlock();
+          try {
+            activeBlockers.add(blocker);
+          } finally {
+            activeBlockersLock.unlock();
+          }
         }
 
         @Override
         public void unblock() {
           activeBlockersLock.lock();
-
-          activeBlockers.remove(blocker);
-          if (activeBlockers.size() == 0) {
-            activeBlockersEmptyCondition.signalAll();
+          try {
+            activeBlockers.remove(blocker);
+            if (activeBlockers.size() == 0) {
+              activeBlockersEmptyCondition.signalAll();
+            }
+          } finally {
+            activeBlockersLock.unlock();
           }
-
-          activeBlockersLock.unlock();
         }
       };
 
@@ -133,8 +135,8 @@ public final class BlockingManagerImpl {
   /**
    * The blockers that are currently blocking the test runners.
    */
-  private final Map<ShutdownBlocker, Boolean> activeBlockers =
-      new HashMap<>();
+  private final Set<ShutdownBlocker> activeBlockers =
+      new HashSet<>();
 
   private final Condition activeBlockersEmptyCondition;
 
@@ -154,6 +156,9 @@ public final class BlockingManagerImpl {
    * The context of the current bundle.
    */
   private final BundleContext bundleContext;
+
+  private final Map<ShutdownBlocker, BlockListener> listenersByBlockers =
+      new ConcurrentHashMap<>();
 
   /**
    * A flag that indicates whether this manager is stopped or not.
@@ -175,10 +180,23 @@ public final class BlockingManagerImpl {
     this.bundleContext = bundleContext;
   }
 
+  /**
+   * Notify all tracked blockers about new test result.
+   *
+   * @param testClassResult
+   *          The execution result of the test class.
+   */
+  public void handleTestClassResult(final TestClassResult testClassResult) {
+    Set<ShutdownBlocker> trackedBlockers = listenersByBlockers.keySet();
+    for (ShutdownBlocker shutdownBlocker : trackedBlockers) {
+      shutdownBlocker.handleTestClassResult(testClassResult);
+    }
+  }
+
   private void logBlockCauses() {
     StringBuilder sb = new StringBuilder("Test running is blocked due to the following reasons:\n");
-    for (ShutdownBlocker blocker : activeBlockers.keySet()) {
-      sb.append("Blocker").append(blocker.toString()).append("\n");
+    for (ShutdownBlocker blocker : activeBlockers) {
+      sb.append("Blocker ").append(blocker.toString()).append('\n');
       blocker.logBlockCauses(sb);
     }
     LOGGER.info(sb.toString());

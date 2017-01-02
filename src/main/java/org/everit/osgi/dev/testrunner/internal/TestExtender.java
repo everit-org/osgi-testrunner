@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.everit.osgi.dev.testrunner.engine.TestEngine;
+import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
@@ -163,6 +164,8 @@ public class TestExtender {
     return result;
   }
 
+  private final BlockingManagerImpl blockingManager;
+
   private final BundleContext bundleContext;
 
   private final Object mutex = new Object();
@@ -183,9 +186,13 @@ public class TestExtender {
    *
    * @param bundleContext
    *          the context of the bundle.
+   * @param blockingManager
+   *          The blocking manager that is notified when a test is executed.
    */
-  public TestExtender(final BundleContext bundleContext) {
+  public TestExtender(final BundleContext bundleContext,
+      final BlockingManagerImpl blockingManager) {
     this.bundleContext = bundleContext;
+    this.blockingManager = blockingManager;
   }
 
   private void addTest(final ServiceReference<Object> reference,
@@ -213,6 +220,7 @@ public class TestExtender {
       }
 
       tests.add(new TestServiceWithReference(reference, service));
+      mutex.notifyAll();
     }
   }
 
@@ -261,16 +269,15 @@ public class TestExtender {
       File xmlFile = new File(TEST_RESULT_FOLDER_FILE, fileName + ".xml");
 
       ResultUtil.writeXmlResultToFile(testClassResult, xmlFile, testId, true);
+    }
 
-      try {
-        StringWriter sw = new StringWriter();
-        sw.write("\n");
-        ResultUtil.dumpTextResult(testClassResult, testId, sw);
-        LOGGER.info(sw.toString());
-      } catch (IOException e) {
-        LOGGER.log(Level.SEVERE, "Error dumping text result to standard output", e);
-      }
-
+    try {
+      StringWriter sw = new StringWriter();
+      sw.write("\n");
+      ResultUtil.dumpTextResult(testClassResult, testId, sw);
+      LOGGER.info(sw.toString());
+    } catch (IOException e) {
+      LOGGER.log(Level.SEVERE, "Error dumping text result to standard output", e);
     }
   }
 
@@ -321,6 +328,10 @@ public class TestExtender {
               extractServiceReferencePropsAsMap(reference));
 
           dumpTestResults(reference, result);
+
+          if (blockingManager != null) {
+            blockingManager.handleTestClassResult(result);
+          }
         }
       }
     }

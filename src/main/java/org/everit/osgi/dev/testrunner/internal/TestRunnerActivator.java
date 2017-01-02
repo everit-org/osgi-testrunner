@@ -194,7 +194,7 @@ public class TestRunnerActivator implements BundleActivator {
    * The blocking manager instance that is registered as a framework listener, a blueprint listener
    * and as a service.
    */
-  private BlockingManagerImpl blockingManager;
+  private BlockingManagerImpl blockingManager = null;
 
   private FrameworkStartingShutdownBlockerImpl frameworkStartBlocker;
 
@@ -244,7 +244,7 @@ public class TestRunnerActivator implements BundleActivator {
       shutdownThread.start();
     }
 
-    testExtender = new TestExtender(context);
+    testExtender = new TestExtender(context, blockingManager);
     testExtender.open();
   }
 
