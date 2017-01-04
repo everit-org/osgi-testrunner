@@ -35,28 +35,29 @@ public final class TestRunnerConstants {
 
   /**
    * The time in ms until the testrunner will wait for non-deamon threads stopping before exiting
-   * the vm when {@link #ENV_STOP_AFTER_TESTS} environment variable is set to "true".
+   * the vm when {@link #PROP_STOP_AFTER_TESTS} environment variable is set to "true".
    */
   public static final int DEFAULT_SHUTDOWN_TIMEOUT = 5000;
 
   /**
-   * Environment variable that indicates that the framework should be stopped after running the
-   * tests.
+   * Name of the System or Framework property that specifies if the framework is started in
+   * development mode. If the OSGi container is in development mode (not during the integration-test
+   * phase of the build), only those tests are executed after a re-deployment that are annotated
+   * with @{@link TestDuringDevelopment}. The {@link Boolean#parseBoolean(String)} is used to
+   * determine the value of this setting.
    */
-  public static final String ENV_STOP_AFTER_TESTS = "EOSGI_STOP_AFTER_TESTS";
+  public static final String PROP_DEVELOPMENT_MODE = "eosgi.developmentMode";
 
   /**
-   * The name of the Environment Variable that points to the folder where TEXT and XML based test
-   * results should be dumped.
+   * System property that indicates that the framework should be stopped * after running the tests.
    */
-  public static final String ENV_TEST_RESULT_FOLDER = "EOSGI_TEST_RESULT_FOLDER";
+  public static final String PROP_STOP_AFTER_TESTS = "eosgi.stopAfterTests";
 
   /**
-   * If the OSGi container is started in development mode (not during the integration-test phase of
-   * the build), only those tests are executed after a re-deployment that are annotated
-   * with @{@link TestDuringDevelopment}.
+   * The name of the system property that points to the folder where TEXT and XML based test results
+   * should be dumped.
    */
-  public static final boolean IN_DEVELOPMENT_MODE;
+  public static final String PROP_TEST_RESULT_FOLDER = "eosgi.testResultFolder";
 
   /**
    * The key of the property that contains the id of the test. Those OSGi services are picked up
@@ -73,11 +74,6 @@ public final class TestRunnerConstants {
    * The name of the file that is written if there is an error during system exit.
    */
   public static final String SYSTEM_EXIT_ERROR_FILE_NAME = "system-exit-error.txt";
-
-  static {
-    IN_DEVELOPMENT_MODE =
-        !Boolean.parseBoolean(System.getenv(TestRunnerConstants.ENV_STOP_AFTER_TESTS));
-  }
 
   private TestRunnerConstants() {
     // Do nothing

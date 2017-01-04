@@ -218,10 +218,13 @@ public class TestRunnerActivator implements BundleActivator {
 
   @Override
   public void start(final BundleContext context) throws Exception {
-    String resultDumpFolder = System.getenv(TestRunnerConstants.ENV_TEST_RESULT_FOLDER);
+    String resultDumpFolder = context.getProperty(TestRunnerConstants.PROP_TEST_RESULT_FOLDER);
 
-    String stopAfterTests = System.getenv(TestRunnerConstants.ENV_STOP_AFTER_TESTS);
-    final boolean shutdownAfterTests = Boolean.parseBoolean(stopAfterTests);
+    final boolean shutdownAfterTests =
+        Boolean.parseBoolean(context.getProperty(TestRunnerConstants.PROP_STOP_AFTER_TESTS));
+
+    final boolean developmentMode =
+        Boolean.parseBoolean(context.getProperty(TestRunnerConstants.PROP_DEVELOPMENT_MODE));
 
     if (shutdownAfterTests) {
       frameworkStartBlocker = new FrameworkStartingShutdownBlockerImpl(context);
@@ -244,7 +247,7 @@ public class TestRunnerActivator implements BundleActivator {
       shutdownThread.start();
     }
 
-    testExtender = new TestExtender(context, blockingManager);
+    testExtender = new TestExtender(context, blockingManager, developmentMode);
     testExtender.open();
   }
 

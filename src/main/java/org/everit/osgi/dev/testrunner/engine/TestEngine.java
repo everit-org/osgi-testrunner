@@ -30,9 +30,16 @@ public interface TestEngine {
    *
    * @param testObject
    *          The test object instance that contains the test cases.
+   * @param properties
+   *          Attributes that belong to the testObject. E.g.: If the testObject is received as an
+   *          OSGi Service, the properties parameter contains the service properties.
+   * @param context
+   *          The context that the test runner is started in. TestEngines may behave differently
+   *          based on the attributes of the context.
    *
    * @return The test results of the specified test object.
    */
-  TestClassResult runTestsOfInstance(Object testObject, Map<String, ?> properties);
+  TestClassResult runTestsOfInstance(Object testObject, Map<String, ?> properties,
+      TestExecutionContext context);
 
 }

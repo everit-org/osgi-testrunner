@@ -19,7 +19,7 @@ import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 
 /**
  * When the JVM is started in the way that the
- * {@link org.everit.osgi.dev.testrunner.TestRunnerConstants#ENV_STOP_AFTER_TESTS} environment
+ * {@link org.everit.osgi.dev.testrunner.TestRunnerConstants#PROP_STOP_AFTER_TESTS} environment
  * variable is set, the testrunner stops the JVM as soon as there is no thread that is in
  * {@link java.lang.Thread.State#RUNNABLE}. By implementing a {@link ShutdownBlocker}, it is
  * possible to make the testrunner waiting a bit more. This can be useful when the JVM has to wait

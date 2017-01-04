@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.everit.osgi.dev.testrunner.engine.TestEngine;
+import org.everit.osgi.dev.testrunner.engine.TestExecutionContext;
 import org.everit.osgi.dev.testrunner.internal.blocking.BlockingManagerImpl;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Filter;
@@ -145,7 +146,7 @@ public class TestExtender {
   private static final File TEST_RESULT_FOLDER_FILE;
 
   static {
-    String testResultFolder = System.getenv(TestRunnerConstants.ENV_TEST_RESULT_FOLDER);
+    String testResultFolder = System.getProperty(TestRunnerConstants.PROP_TEST_RESULT_FOLDER);
     if (testResultFolder != null) {
       TEST_RESULT_FOLDER_FILE = new File(testResultFolder);
     } else {
@@ -167,6 +168,8 @@ public class TestExtender {
   private final BlockingManagerImpl blockingManager;
 
   private final BundleContext bundleContext;
+
+  private final boolean developmentMode;
 
   private final Object mutex = new Object();
 
@@ -190,9 +193,10 @@ public class TestExtender {
    *          The blocking manager that is notified when a test is executed.
    */
   public TestExtender(final BundleContext bundleContext,
-      final BlockingManagerImpl blockingManager) {
+      final BlockingManagerImpl blockingManager, final boolean developmentMode) {
     this.bundleContext = bundleContext;
     this.blockingManager = blockingManager;
+    this.developmentMode = developmentMode;
   }
 
   private void addTest(final ServiceReference<Object> reference,
@@ -324,8 +328,11 @@ public class TestExtender {
         for (TestServiceWithReference testServiceWithReference : testServiceWithReferences) {
           Object testObject = testServiceWithReference.service;
           ServiceReference<Object> reference = testServiceWithReference.reference;
+
+          TestExecutionContext testExecutionContext = new TestExecutionContext();
+          testExecutionContext.developmentMode = developmentMode;
           TestClassResult result = testEngine.runTestsOfInstance(testObject,
-              extractServiceReferencePropsAsMap(reference));
+              extractServiceReferencePropsAsMap(reference), testExecutionContext);
 
           dumpTestResults(reference, result);
 
