@@ -35,7 +35,7 @@ public @interface EOSGiTestClass {
   /**
    * The number how many times the class should be executed. It is possible that that several
    * instances of the class should be executed before the test runner shuts down the JVM.
-   * 
+   *
    * @return the number how many times the class should be executed.
    */
   int executionCount() default 1;

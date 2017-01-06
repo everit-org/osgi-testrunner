@@ -38,7 +38,7 @@ import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 /**
- * A manager that handles all the blocking causes why the JVM should not shut down. 
+ * A manager that handles all the blocking causes why the JVM should not shut down.
  */
 public final class BlockingManagerImpl {
 
