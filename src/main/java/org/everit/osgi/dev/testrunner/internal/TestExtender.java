@@ -191,6 +191,9 @@ public class TestExtender {
    *          the context of the bundle.
    * @param blockingManager
    *          The blocking manager that is notified when a test is executed.
+   * @param developmentMode
+   *          Whether the test runner is in development mode or not. In development mode only those
+   *          tests are executed that are annotated with @TestDuringDevelopment.
    */
   public TestExtender(final BundleContext bundleContext,
       final BlockingManagerImpl blockingManager, final boolean developmentMode) {

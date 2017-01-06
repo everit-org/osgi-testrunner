@@ -38,10 +38,7 @@ import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 /**
- * A manager that handles all the blocking causes why the tests should not start and starts them
- * when there is no more cause. Many technologies can have their starting process asynchronously. In
- * that case technology based {@link ShutdownBlocker} implementations can monitor their state and
- * notify the {@link BlockingManager} when the tests are ready to run.
+ * A manager that handles all the blocking causes why the JVM should not shut down. 
  */
 public final class BlockingManagerImpl {
 
