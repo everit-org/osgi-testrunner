@@ -27,7 +27,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
-import org.everit.osgi.dev.testrunner.blocking.BlockListener;
+import org.everit.osgi.dev.testrunner.blocking.ShutdownBlockListener;
 import org.everit.osgi.dev.testrunner.blocking.ShutdownBlocker;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
 import org.everit.osgi.dev.testrunner.internal.util.BundleUtil;
@@ -55,7 +55,7 @@ public final class BlockingManagerImpl {
     public ShutdownBlocker addingService(final ServiceReference<ShutdownBlocker> reference) {
       final ShutdownBlocker blocker = bundleContext.getService(reference);
 
-      BlockListener blockListener = new BlockListener() {
+      ShutdownBlockListener blockListener = new ShutdownBlockListener() {
 
         @Override
         public void block() {
@@ -96,7 +96,7 @@ public final class BlockingManagerImpl {
     @Override
     public void removedService(final ServiceReference<ShutdownBlocker> reference,
         final ShutdownBlocker blocker) {
-      BlockListener blockListener = listenersByBlockers.remove(blocker);
+      ShutdownBlockListener blockListener = listenersByBlockers.remove(blocker);
       if (blockListener != null) {
         blocker.removeBlockListener(blockListener);
       }
@@ -157,7 +157,7 @@ public final class BlockingManagerImpl {
    */
   private final BundleContext bundleContext;
 
-  private final Map<ShutdownBlocker, BlockListener> listenersByBlockers =
+  private final Map<ShutdownBlocker, ShutdownBlockListener> listenersByBlockers =
       new ConcurrentHashMap<>();
 
   /**

@@ -31,12 +31,12 @@ public abstract class AbstractShutdownBlocker implements ShutdownBlocker {
 
   private boolean blocking = false;
 
-  private final List<BlockListener> blockListeners = new ArrayList<>();
+  private final List<ShutdownBlockListener> blockListeners = new ArrayList<>();
 
   private final ReentrantReadWriteLock blockListenersRWLock = new ReentrantReadWriteLock(false);
 
   @Override
-  public void addBlockListener(final BlockListener blockListener) {
+  public void addBlockListener(final ShutdownBlockListener blockListener) {
     WriteLock writeLock = blockListenersRWLock.writeLock();
     writeLock.lock();
     blockListeners.add(blockListener);
@@ -70,7 +70,7 @@ public abstract class AbstractShutdownBlocker implements ShutdownBlocker {
     readLock.lock();
     if (blocking != block) {
       blocking = block;
-      for (BlockListener blockListener : blockListeners) {
+      for (ShutdownBlockListener blockListener : blockListeners) {
         if (block) {
           blockListener.block();
         } else {
@@ -82,7 +82,7 @@ public abstract class AbstractShutdownBlocker implements ShutdownBlocker {
   }
 
   @Override
-  public void removeBlockListener(final BlockListener blockListener) {
+  public void removeBlockListener(final ShutdownBlockListener blockListener) {
     WriteLock writeLock = blockListenersRWLock.writeLock();
     writeLock.lock();
     blockListeners.remove(blockListener);

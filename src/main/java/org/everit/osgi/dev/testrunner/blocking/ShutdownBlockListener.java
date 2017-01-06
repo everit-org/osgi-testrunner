@@ -16,19 +16,18 @@
 package org.everit.osgi.dev.testrunner.blocking;
 
 /**
- * A {@link ShutdownBlocker} can notify the {@link BlockingManager} that is should block or let
- * starting the test runners via this listener.
+ * A {@link ShutdownBlocker} can notify the test runner that it should not stop the JVM yet as some
+ * process are still running or not all tests has been executed yet.
  */
-public interface BlockListener {
+public interface ShutdownBlockListener {
 
   /**
-   * The {@link BlockingManager} should not start the test runners yet.
+   * The test runner should not shut down the JVM until unblock is called.
    */
   void block();
 
   /**
-   * The {@link BlockingManager} should start the test runners if no other {@link ShutdownBlocker}
-   * blocks.
+   * The test runner can shut down the JVM if no other {@link ShutdownBlocker}s are blocking.
    */
   void unblock();
 }

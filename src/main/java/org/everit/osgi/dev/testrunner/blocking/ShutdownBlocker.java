@@ -30,8 +30,11 @@ public interface ShutdownBlocker {
   /**
    * Adding a listener to the Blocker so it can notify the listener about blocking and unblocking.
    * Normally at least there is one listener that is the test runner itself.
+   *
+   * @param blockListener
+   *          The listener that will be notified.
    */
-  void addBlockListener(BlockListener blockListener);
+  void addBlockListener(ShutdownBlockListener blockListener);
 
   /**
    * Called when a test class is executed.
@@ -42,7 +45,7 @@ public interface ShutdownBlocker {
   void handleTestClassResult(TestClassResult testClassResult);
 
   /**
-   * The {@link BlockingManager} calls this function periodically to be able to log out the causes
+   * The test runner calls this function periodically to be able to log out the causes
    * of the blocked tests.
    *
    * @param sb
@@ -58,5 +61,5 @@ public interface ShutdownBlocker {
    * @param blockListener
    *          The listener instance.
    */
-  void removeBlockListener(BlockListener blockListener);
+  void removeBlockListener(ShutdownBlockListener blockListener);
 }
