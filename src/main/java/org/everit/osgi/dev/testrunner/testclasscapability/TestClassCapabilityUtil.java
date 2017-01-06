@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.everit.osgi.dev.testrunner.testcasecapability;
+package org.everit.osgi.dev.testrunner.testclasscapability;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,11 +36,11 @@ public final class TestClassCapabilityUtil {
           + TestRunnerConstants.CAPABILITY_TESTCLASS_NAMESPACE + " capability: " + clause);
     }
     String countAttr =
-        clause.getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_ATTR_INSTANCE_COUNT);
+        clause.getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_ATTR_EXECUTION_COUNT);
 
     if (countAttr == null) {
       countAttr = clause
-          .getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_ATTR_INSTANCE_COUNT + ":Long");
+          .getAttribute(TestRunnerConstants.CAPABILITY_TESTCLASS_ATTR_EXECUTION_COUNT + ":Long");
     }
 
     int count = 1;
@@ -70,7 +70,7 @@ public final class TestClassCapabilityUtil {
    * @return The resolved eosgi.testClass capabilities.
    * @throws TestClassCapabilitySyntaxException
    *           if {@link TestRunnerConstants#CAPABILITY_TESTCLASS_NAMESPACE} attribute is missing or
-   *           {@link TestRunnerConstants#CAPABILITY_TESTCLASS_ATTR_INSTANCE_COUNT} attribute is
+   *           {@link TestRunnerConstants#CAPABILITY_TESTCLASS_ATTR_EXECUTION_COUNT} attribute is
    *           not a number.
    */
   public static Collection<TestClassCapabilityDTO> resolveTestCaseCapabilities(

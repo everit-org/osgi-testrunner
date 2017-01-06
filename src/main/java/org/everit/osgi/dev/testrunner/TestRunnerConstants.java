@@ -25,7 +25,7 @@ public final class TestRunnerConstants {
    * times the specified class should be executed before the test runner shuts down the VM. If not
    * specified, that means that the test class should run once.
    */
-  public static final String CAPABILITY_TESTCLASS_ATTR_INSTANCE_COUNT = "instanceCount";
+  public static final String CAPABILITY_TESTCLASS_ATTR_EXECUTION_COUNT = "executionCount";
 
   /**
    * The name of the capability that tells the test runner that the bundle contains test cases that

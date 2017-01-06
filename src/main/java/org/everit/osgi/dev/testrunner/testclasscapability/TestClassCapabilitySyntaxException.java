@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.everit.osgi.dev.testrunner.testcasecapability;
+package org.everit.osgi.dev.testrunner.testclasscapability;
 
 /**
- * Simple holder class for a test class OSGi capability data.
+ * Thrown when there is a syntax exception in the eosgi.testClass capability of a bundle. E.g.: The
+ * class name is missing or the count attribute is not a non-negative number.
  */
-public class TestClassCapabilityDTO {
+public class TestClassCapabilitySyntaxException extends RuntimeException {
 
-  public String clazz;
+  private static final long serialVersionUID = 1466698139894321931L;
 
-  /**
-   * The count how many times this class should be executed.
-   */
-  public int count = 1;
+  public TestClassCapabilitySyntaxException(final String message) {
+    super(message);
+  }
+
 }
