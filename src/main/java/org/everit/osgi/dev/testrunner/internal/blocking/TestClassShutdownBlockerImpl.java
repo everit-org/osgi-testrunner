@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.everit.osgi.dev.testrunner.blocking.AbstractShutdownBlocker;
 import org.everit.osgi.dev.testrunner.engine.TestClassResult;
-import org.everit.osgi.dev.testrunner.testclasscapability.TestClassCapabilityDTO;
-import org.everit.osgi.dev.testrunner.testclasscapability.TestClassCapabilityUtil;
+import org.everit.osgi.dev.testrunner.testclasscapability.util.TestClassCapabilityDTO;
+import org.everit.osgi.dev.testrunner.testclasscapability.util.TestClassCapabilityUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;

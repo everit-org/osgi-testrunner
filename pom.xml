@@ -83,7 +83,7 @@
               org.everit.osgi.dev.testrunner;version="5.0.0",
               org.everit.osgi.dev.testrunner.blocking;version="5.0.0",
               org.everit.osgi.dev.testrunner.engine;version="5.0.0",
-              org.everit.osgi.dev.testrunner.testcasecapability;version="5.0.0"
+              org.everit.osgi.dev.testrunner.testclasscapability.util;version="5.0.0"
             </Export-Package>
           </instructions>
         </configuration>
