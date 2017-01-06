@@ -28,10 +28,10 @@
 <link href="http://www.everit.org/css/docs.min.css" rel="stylesheet">
 <link href="http://www.everit.org/css/everit.css" rel="stylesheet">
 <script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push([ '_setAccount', 'UA-15041869-4' ]);
-  _gaq.push([ '_setDomainName', 'everit.org' ]);
-  _gaq.push([ '_trackPageview' ]);
+	var _gaq = _gaq || [];
+	_gaq.push([ '_setAccount', 'UA-15041869-4' ]);
+	_gaq.push([ '_setDomainName', 'everit.org' ]);
+	_gaq.push([ '_trackPageview' ]);
 </script>
 </head>
 
@@ -65,7 +65,7 @@
       <span class="bs-docs-booticon bs-docs-booticon-lg bs-docs-booticon-outline"> <img
         class="logo" src="http://www.everit.org/fonts/sbz_e.svg" alt="E">
       </span>
-      <p class="lead">OSGi Testrunner</p>
+      <p class="lead">OSGi Test Runner</p>
     </div>
   </div>
   <div class="container">
@@ -73,12 +73,16 @@
 
       <div class="bs-docs-featurette cookbook">
         <h2 id="introduction" class="bs-docs-featurette-title">Introduction</h2>
-        <p>The test runner bundle picks up tests and runs them.</p>
+        <p>
+          The test runner bundle picks up tests and executes them. If you want to see the module in
+          practice instead of reading its documentation, go through the chapters of the <a
+            href="http://cookbook.everit.org">Everit Cookbook</a>.
+        </p>
       </div>
       <hr class="featurette-divider">
 
       <div class="bs-docs-featurette cookbook">
-        <h2 id="running_osgi_tests" class="bs-docs-featurette-title">Running OSGi tests</h2>
+        <h2 id="running_osgi_tests" class="bs-docs-featurette-title">Executing OSGi tests</h2>
         <p>The module picks up every OSGi service having the following service properties
           defined:</p>
         <ul>
@@ -89,51 +93,121 @@
             href="https://github.com/everit-org/osgi-testrunner-junit4">osgi-testrunner-junit4</a>
             project.</li>
         </ul>
-        <p>Annotations should be placed into the interface implemented by the OSGi service.</p>
-        <p>The bundle does not start looking for services until there is a blocking cause.
-          Blocking causes can be:</p>
-        <ul>
-          <li>Framework is not started yet (Framework bundle is not in ACTIVE state)</li>
-          <li>Custom blocking causes: It is possible to write custom Blockers and register them
-            as OSGi services. If they are registered, they are picked up, and the related tests will
-            not be started after a system startup only if all blockers allow it. Currently, a
-            blocker for Blueprint technology is implemented in the osgi-testrunner-blueprint project
-            that forces the tests to wait until all Blueprintcontainers get into ACTIVE or FAILED
-            state.</li>
-        </ul>
       </div>
       <hr class="featurette-divider">
 
       <div class="bs-docs-featurette cookbook">
         <h2 id="ordinary_junit_tests_vs_testrunner_bundle" class="bs-docs-featurette-title">Ordinary
           JUnit tests vs. testrunner bundle</h2>
-        <p>The tests have to be provided as OSGi services and the JUnit annotations are required
-          to be placed into the interface the OSGi services implement.</p>
+        <p>The tests have to be provided as OSGi services, and the JUnit annotations are
+          required to be placed into the implementation of the OSGi service.</p>
         <p>In ordinary JUnit based solutions, the programmer has to provide the class name so
           that the JUnit technology can instantiate the class. By using this bundle, the programmer
-          instantiates the JUnit test class with any kind of technology.</p>
+          instantiates the JUnit test class with any technology. E.g.: Declarative Services,
+          Blueprint or Everit Component Model</p>
       </div>
       <hr class="featurette-divider">
 
       <div class="bs-docs-featurette cookbook">
-        <h2 id="environment_variables" class="bs-docs-featurette-title">Environment variables</h2>
+        <h2 id="configuration" class="bs-docs-featurette-title">Configuration</h2>
+        <h3>Test runner 5.0 and above</h3>
+        <p>The following System or Framework properties make it easier to integrate the
+          testrunner with build tools.</p>
+        <ul>
+          <li><b>eosgi.stopAfterTests</b>: In case this system property has the value "true",
+            the testrunner bundle stops the OSGi container and the JVM after the tests are executed.
+            The JVM will be stopped only if all <a href="#shutdown_blocker">ShutdownBlockers</a> are
+            in non-blocking state.</li>
+          <li><b>eosgi.testResultFolder</b>: By default, only test results in TEXT format are
+            written out with the standard Java Logger. In case this system property is specified,
+            the test results will be dumped in XML and TEXT format to the specified folder.</li>
+          <li><b>eosgi.developmentMode</b>: In case this property is set to <i>true</i>, only
+            those tests will be executed that are annotated with <i>@TestDuringDevelopment</i>.
+            Either a method or a class can be annotated with the mentioned annotation. If a class is
+            annotated with <i>@TestDuringDevelopment</i>, it means that all classes in the tests
+            should be executed. Development mode is useful if we want to hot-deploy our test bundle
+            or any bundle it depends on and we do not want all tests re-executed each time.</li>
+        </ul>
+
+        <h3>Test Runner 4.x and before</h3>
         <p>The following environment variables make it easier to integrate the testrunner with
           build tools.</p>
         <ul>
-          <li><b>EOSGI_STOP_AFTER_TESTS</b>: In case this system property has the value "true",
-            the testrunner bundle stops the OSGi container and the JVM after the tests run.</li>
+          <li><b>EOSGI_STOP_AFTER_TESTS</b>: In case this environment variable has the value
+            "true", the testrunner bundle stops the OSGi container and the JVM after the tests are
+            executed.</li>
           <li><b>ENV_TEST_RESULT_FOLDER</b>: By default, only test results in TEXT format are
-            written out to the standard output. In case this environment is specified, the test
-            results will be dumped in XML and TEXT format to the specified folder.</li>
+            written out with the standard Java Logger. In case this environment variable is
+            specified, the test results will be dumped in XML and TEXT format to the specified
+            folder.</li>
         </ul>
       </div>
+
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="shutdown_blocker" class="bs-docs-featurette-title">Shutdown blocker</h2>
+        <p>
+          In case the <i>"Stop after tests"</i> setting is set to true, the test runner will shut
+          down the JVM after all tests are executed. However, it is not trivial how much the test
+          runner should wait for. Shutdown Blocker OSGi services can be registered to tell the test
+          runner to wait for more tests to be executed. The runner will shut down the JVM only if
+          all blockers are in non-blocking state.
+        </p>
+        <p>There are two Shutdown Blockers by default:</p>
+        <ul>
+          <li><strong>FrameworkStartShutdownBlocker</strong> waits for the framework bundle to
+            become active.</li>
+          <li><strong><a href="#eosgi_testclass">TestClassShutdownBlocker</a></strong> Does not
+            allow the test runner to shut down the JVM until all test classes that are specified
+            with <i>eosgi.testClass</i> bundle capabilities are executed.</li>
+        </ul>
+      </div>
+
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="eosgi_testclass" class="bs-docs-featurette-title">TestClass capability and
+          annotation</h2>
+
+        <p>
+          The TestCase <a href="#shutdown_blocker">shutdown blocker</a> does not allow the test
+          runner to shut down the JVM until all test classes that are specified with <i>eosgi.testClass</i>
+          bundle capabilities are executed. An example:
+        </p>
+        <pre>Provide-Capability: eosgi.testClass;eosgi.testClass=foo.bar.MyTestClass;instanceCount=1</pre>
+        <p>
+          The <i>executionCount</i> attribute tells the blocker, how many times the test class
+          should be executed. There might be cases when the same test class is registered multiple
+          times with different configuration as OSGi services. The value of the <i>instanceCount</i>
+          attribute is summarized so if multiple bundles contain the same capability, their values
+          are summarized, even if the amount is a negative number.
+        </p>
+        <p>
+          It is hard to specify the bundle capability manually always. Therefore, the programmer can
+          use the <i>@EOSGiTestClass</i> annotation on the test class to specify the capability.
+          E.g.:
+        </p>
+        <pre>
+@EOSGiTestClass
+public class MyTestClass {
+
+  @Test
+  public void myTestMethod() {
+  }
+
+}</pre>
+      </div>
+
       <hr class="featurette-divider">
 
       <div class="bs-docs-featurette cookbook">
         <h2 id="maven_support" class="bs-docs-featurette-title">Maven support</h2>
         <p>
           The <a href="https://github.com/everit-org/eosgi-maven-plugin">eosgi-maven-plugin</a> uses
-          the testrunner bundle to run the written tests as a part of the build lifecycle.
+          the <i>testrunner</i> bundle to run the written tests as a part of the build lifecycle.
+          Test runner 5.x is supported from the version 4.1.0 of <a
+            href="https://github.com/everit-org/eosgi-maven-plugin">eosgi-maven-plugin</a>.
         </p>
       </div>
       <hr class="featurette-divider">
@@ -148,7 +222,9 @@
           <li><a href="#running_osgi_tests">Running OSGi tests</a></li>
           <li><a href="#ordinary_junit_tests_vs_testrunner_bundle">Ordinary JUnit tests vs.
               testrunner bundle</a></li>
-          <li><a href="#environment_variables">Environment variables</a></li>
+          <li><a href="#configuration">Configuration</a></li>
+          <li><a href="#shutdown_blocker">Shutdown blocker</a></li>
+          <li><a href="#eosgi_testclass">TestClass capability and annotation</a></li>
           <li><a href="#maven_support">Maven support</a></li>
         </ul>
       </nav>
@@ -176,17 +252,17 @@
   <script src="http://www.everit.org/js/bootstrap.min.js"></script>
   <script src="http://www.everit.org/js/everit.js "></script>
   <script type="text/javascript">
-      (function() {
-        var ga = document.createElement('script');
-        ga.type = 'text/javascript';
-        ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl'
-            : 'http://www')
-            + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0];
-        s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
+			(function() {
+				var ga = document.createElement('script');
+				ga.type = 'text/javascript';
+				ga.async = true;
+				ga.src = ('https:' == document.location.protocol ? 'https://ssl'
+						: 'http://www')
+						+ '.google-analytics.com/ga.js';
+				var s = document.getElementsByTagName('script')[0];
+				s.parentNode.insertBefore(ga, s);
+			})();
+		</script>
   <script src="http://www.everit.org/js/prettify/run_prettify.js"></script>
 </body>
 
